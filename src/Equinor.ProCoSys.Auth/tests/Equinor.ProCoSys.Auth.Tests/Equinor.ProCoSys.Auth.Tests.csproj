@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Equinor.ProCoSys.Auth\Equinor.ProCoSys.Auth.csproj" />
+    <ProjectReference Include="..\..\Equinor.ProCoSys.Auth\Equinor.ProCoSys.Auth.csproj" />
   </ItemGroup>
 
 </Project>
