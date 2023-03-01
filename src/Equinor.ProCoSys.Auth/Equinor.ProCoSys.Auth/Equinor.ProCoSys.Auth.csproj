@@ -4,6 +4,7 @@
 	  <VersionPrefix>0.0.2</VersionPrefix>
 	  <TargetFramework>net6.0</TargetFramework>
 	  <IncludeReferencedProjects>true</IncludeReferencedProjects>
+	  <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
