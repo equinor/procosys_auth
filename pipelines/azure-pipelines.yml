@@ -17,12 +17,7 @@ variables:
 
 stages:
 - stage: "Build"
-  condition:  |
-   or
-   ( 
-     eq(variables['Build.SourceBranch'], 'refs/heads/master'),
-     eq(variables['Build.SourceBranch'], 'refs/heads/dev')
-   )
+  condition: and(always(), eq(variables['Build.Reason'], 'PullRequest'))
   jobs:
   - job:
     workspace:
@@ -54,16 +49,7 @@ stages:
 - stage: "PublishAndPack"
   displayName: 'Publish and Pack'
   dependsOn: 'Build'
-  condition:  |
-   and
-   (
-     succeeded(),
-     or
-     ( 
-       eq(variables['Build.SourceBranch'], 'refs/heads/master'),
-       eq(variables['Build.SourceBranch'], 'refs/heads/dev')
-     )
-    )
+  condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
   jobs:
   - job: PackAndPublish
     displayName: Pack Worker, then publish both
@@ -86,7 +72,7 @@ stages:
         pwsh: true
         script: |
           # Set powershell variables
-          $path = "src/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth.csproj"
+          $path = "src/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth.csproj"
           $xPath = "/Project/PropertyGroup"
           $element = "VersionPrefix"
           $variableName = "packageVersion" # Name of the pipeline variable used as suffix in referenace. Example $(getVersion.packageVersion)
