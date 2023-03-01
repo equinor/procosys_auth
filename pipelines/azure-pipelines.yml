@@ -12,11 +12,10 @@ variables:
   System.Debug: 'true'
   vmImageName: 'windows-latest'
   buildConfiguration: 'Release'
-  WithoutProxyForTest: 'true'
 
 stages:
 - stage: "Build"
-  condition: and(always(), eq(variables['Build.Reason'], 'PullRequest'))
+  displayName: 'Build and run tests'
   jobs:
   - job:
     workspace:
@@ -39,7 +38,7 @@ stages:
         arguments: '--configuration $(buildConfiguration)'
 
     - task: DotNetCoreCLI@2
-      displayName: 'dotnet test $(buildConfiguration)'
+      displayName: 'Run tests in $(buildConfiguration)'
       inputs:
         command: test
         projects: '**/*[Tt]ests/*.csproj'
@@ -65,7 +64,7 @@ stages:
           
     - task: PowerShell@2
       name: getVersion # Name of the pipeline variable used as prefix in referenace. Example $(getVersion.packageVersion)
-      displayName: 'get version from Equinor.ProCoSys.Auth.csproj'
+      displayName: 'Get version'
       inputs:
         targetType: inline
         pwsh: true
@@ -97,14 +96,13 @@ stages:
         command: pack
         packagesToPack: 'src/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth.csproj' 
         packDestination: '$(Build.ArtifactStagingDirectory)\packages\releases'
-        includeReferencedProjects: true
         version: $(getVersion.packageVersion)
 
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: 'packages'
 
     - task: NuGetAuthenticate@0
-      displayName: 'NuGet Authenticate'
+      displayName: 'NuGet authenticate'
 
     - task: DotNetCoreCLI@2
       displayName: 'NuGet push release'
@@ -113,4 +111,3 @@ stages:
         feedsToUse: 'select'
         packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
         publishVstsFeed: 'ProCoSysOfficial'
-        allowPackageConflicts: true      
