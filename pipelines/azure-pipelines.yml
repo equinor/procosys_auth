@@ -110,7 +110,7 @@ stages:
       displayName: 'NuGet pack'
       inputs:
         command: pack
-        packagesToPack: 'src/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth.csproj'
+        packagesToPack: 'src/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth.csproj' 
         packDestination: '$(Build.ArtifactStagingDirectory)\packages\releases'
         includeReferencedProjects: true
         version: $(getVersion.packageVersion)
