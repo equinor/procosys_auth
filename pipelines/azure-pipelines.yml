@@ -49,7 +49,7 @@ stages:
 - stage: "PublishAndPack"
   displayName: 'Publish and Pack'
   dependsOn: 'Build'
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   jobs:
   - job: PackAndPublish
     displayName: Pack Worker, then publish both
