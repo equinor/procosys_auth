@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32414.318
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Equinor.ProCoSys.Auth", "Equinor.ProCoSys.Auth\Equinor.ProCoSys.Auth.csproj", "{354A84A0-53BA-40C1-9F10-CC7D30DA8E00}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{739B571E-2CC0-462D-8572-D63FB0DAC2B7}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\pipelines\azure-pipelines.yml = ..\..\pipelines\azure-pipelines.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8BCCB288-09AE-471A-B3D8-B86496E59449}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Equinor.ProCoSys.Auth.Tests", "tests\Equinor.ProCoSys.Auth.Tests\Equinor.ProCoSys.Auth.Tests.csproj", "{FF75E50A-4AA4-48A4-B93A-EB2AEBD57308}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{354A84A0-53BA-40C1-9F10-CC7D30DA8E00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{354A84A0-53BA-40C1-9F10-CC7D30DA8E00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{354A84A0-53BA-40C1-9F10-CC7D30DA8E00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{354A84A0-53BA-40C1-9F10-CC7D30DA8E00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF75E50A-4AA4-48A4-B93A-EB2AEBD57308}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF75E50A-4AA4-48A4-B93A-EB2AEBD57308}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF75E50A-4AA4-48A4-B93A-EB2AEBD57308}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF75E50A-4AA4-48A4-B93A-EB2AEBD57308}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FF75E50A-4AA4-48A4-B93A-EB2AEBD57308} = {8BCCB288-09AE-471A-B3D8-B86496E59449}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8502F283-F01B-474A-ACE7-C24FE0F01E1F}
+	EndGlobalSection
+EndGlobal
