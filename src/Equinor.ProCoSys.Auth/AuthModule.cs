@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Equinor.ProCoSys.Common.Time;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Equinor.ProCoSys.Auth
 {
@@ -6,6 +7,7 @@ namespace Equinor.ProCoSys.Auth
     {
         public static IServiceCollection AddPcsAuthIntegration(this IServiceCollection services)
         {
+            TimeService.SetProvider(new SystemTimeProvider());
 
             return services;
         }

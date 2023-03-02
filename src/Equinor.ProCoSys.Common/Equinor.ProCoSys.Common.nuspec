@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>Equinor.ProCoSys.Common</id>
+    <version>$version$</version>
+    <description>Library with common code in ProCoSys</description>
+    <authors>Equinor ASA</authors>
+  </metadata>
+  <files>
+    <file src="bin\Release\net6.0\Equinor.ProCoSys.Common.dll" target="lib\net7.0\" />
+    <file src="**\*.cs" exclude="bin\**\*.*;obj\**\*.*" target="src\" />
+  </files>
+
+</package>
