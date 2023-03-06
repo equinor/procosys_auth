@@ -4,7 +4,7 @@ namespace Equinor.ProCoSys.Common.Time
 {
     public static class TimeService
     {
-        private static ITimeProvider s_provider;
+        private static ITimeProvider s_provider = new SystemTimeProvider();
 
         public static DateTime UtcNow => s_provider.UtcNow;
 
