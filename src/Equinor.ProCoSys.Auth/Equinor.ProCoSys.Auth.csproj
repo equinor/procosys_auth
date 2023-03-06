@@ -3,7 +3,6 @@
 	<PropertyGroup>
 		<VersionPrefix>0.0.3</VersionPrefix>
 		<TargetFramework>net6.0</TargetFramework>
-		<Nullable>enable</Nullable>
 		<IncludeReferencedProjects>true</IncludeReferencedProjects>
 	</PropertyGroup>
 
