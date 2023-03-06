@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace Equinor.ProCoSys.BlobStorage
 {
-    public class AzureAzureBlobService : IAzureBlobService
+    public class AzureBlobService : IAzureBlobService
     {
         private class ResourceTypes
         {
@@ -24,7 +24,7 @@ namespace Equinor.ProCoSys.BlobStorage
         private readonly string _accountName;
         private readonly string _accountKey;
 
-        public AzureAzureBlobService(IOptionsSnapshot<BlobStorageOptions> options)
+        public AzureBlobService(IOptionsSnapshot<BlobStorageOptions> options)
         {
             if (string.IsNullOrEmpty(options.Value.ConnectionString))
             {
@@ -57,9 +57,9 @@ namespace Equinor.ProCoSys.BlobStorage
             return res.Value;
         }
 
-        public async Task<List<string>> ListAsync(string container, string blobPath, CancellationToken cancellationToken = default)
+        public async Task<List<string>> ListAsync(string container, CancellationToken cancellationToken = default)
         {
-            var client = new BlobContainerClient(_connectionString, blobPath);
+            var client = new BlobContainerClient(_connectionString, container);
             var blobNames = new List<string>();
             await foreach (var blob in client.GetBlobsAsync(BlobTraits.None, BlobStates.None, null, cancellationToken))
             {
@@ -75,7 +75,7 @@ namespace Equinor.ProCoSys.BlobStorage
             {
                 Scheme = "https",
                 Host = string.Format($"{_accountName}.{_endpoint}"),
-                Path = blobPath,
+                Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
             return fullUri.Uri;
@@ -88,7 +88,7 @@ namespace Equinor.ProCoSys.BlobStorage
             {
                 Scheme = "https",
                 Host = string.Format($"{_accountName}.{_endpoint}"),
-                Path = blobPath,
+                Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
             return fullUri.Uri;
@@ -101,7 +101,7 @@ namespace Equinor.ProCoSys.BlobStorage
             {
                 Scheme = "https",
                 Host = string.Format($"{_accountName}.{_endpoint}"),
-                Path = blobPath,
+                Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
             return fullUri.Uri;
