@@ -70,7 +70,7 @@ stages:
         pwsh: true
         script: |
           # Set powershell variables
-          $path = "src/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth.csproj"
+          $path = "src/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth.csproj"
           $xPath = "/Project/PropertyGroup"
           $element = "VersionPrefix"
           $variableName = "packageVersion" # Name of the pipeline variable used as suffix in referenace. Example $(getVersion.packageVersion)
@@ -94,7 +94,7 @@ stages:
       displayName: 'NuGet pack'
       inputs:
         command: pack
-        packagesToPack: 'src/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth.csproj' 
+        packagesToPack: 'src/Equinor.ProCoSys.Auth/Equinor.ProCoSys.Auth.csproj' 
         packDestination: '$(Build.ArtifactStagingDirectory)\packages\releases'
         version: $(getVersion.packageVersion)
 
@@ -138,7 +138,7 @@ stages:
         pwsh: true
         script: |
           # Set powershell variables
-          $path = "src/Equinor.ProCoSys.BlobStorage/Equinor.ProCoSys.BlobStorage/Equinor.ProCoSys.BlobStorage.csproj"
+          $path = "src/Equinor.ProCoSys.BlobStorage/Equinor.ProCoSys.BlobStorage.csproj"
           $xPath = "/Project/PropertyGroup"
           $element = "VersionPrefix"
           $variableName = "packageVersion" # Name of the pipeline variable used as suffix in referenace. Example $(getVersion.packageVersion)
@@ -162,7 +162,7 @@ stages:
       displayName: 'NuGet pack'
       inputs:
         command: pack
-        packagesToPack: 'src/Equinor.ProCoSys.BlobStorage/Equinor.ProCoSys.BlobStorage/Equinor.ProCoSys.BlobStorage.csproj' 
+        packagesToPack: 'src/Equinor.ProCoSys.BlobStorage/Equinor.ProCoSys.BlobStorage.csproj' 
         packDestination: '$(Build.ArtifactStagingDirectory)\packages\releases'
         version: $(getVersion.packageVersion)
 
@@ -206,7 +206,7 @@ stages:
         pwsh: true
         script: |
           # Set powershell variables
-          $path = "src/Equinor.ProCoSys.Common/Equinor.ProCoSys.Common/Equinor.ProCoSys.Common.csproj"
+          $path = "src/Equinor.ProCoSys.Common/Equinor.ProCoSys.Common.csproj"
           $xPath = "/Project/PropertyGroup"
           $element = "VersionPrefix"
           $variableName = "packageVersion" # Name of the pipeline variable used as suffix in referenace. Example $(getVersion.packageVersion)
@@ -230,7 +230,7 @@ stages:
       displayName: 'NuGet pack'
       inputs:
         command: pack
-        packagesToPack: 'src/Equinor.ProCoSys.Common/Equinor.ProCoSys.Common/Equinor.ProCoSys.Common.csproj' 
+        packagesToPack: 'src/Equinor.ProCoSys.Common/Equinor.ProCoSys.Common.csproj' 
         packDestination: '$(Build.ArtifactStagingDirectory)\packages\releases'
         version: $(getVersion.packageVersion)
 
