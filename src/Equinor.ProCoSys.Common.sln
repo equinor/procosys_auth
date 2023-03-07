@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Equinor.ProCoSys.Auth", "Eq
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{739B571E-2CC0-462D-8572-D63FB0DAC2B7}"
 	ProjectSection(SolutionItems) = preProject
-		..\pipelines\azure-pipelines.yml = ..\pipelines\azure-pipelines.yml
+		..\pipelines\azure-pipeline-common.yml = ..\pipelines\azure-pipeline-common.yml
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Equinor.ProCoSys.BlobStorag
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Equinor.ProCoSys.Common", "Equinor.ProCoSys.Common\Equinor.ProCoSys.Common.csproj", "{9E73D10B-3021-4C64-A18B-1EBF773C81AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Equinor.ProCoSys.Common.Tests", "tests\Equinor.ProCoSys.Common.Tests\Equinor.ProCoSys.Common.Tests.csproj", "{BA3CC1D2-958D-4D38-B7F5-F09FC8B42872}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Equinor.ProCoSys.Common.Tests", "tests\Equinor.ProCoSys.Common.Tests\Equinor.ProCoSys.Common.Tests.csproj", "{BA3CC1D2-958D-4D38-B7F5-F09FC8B42872}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
