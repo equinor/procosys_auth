@@ -9,8 +9,8 @@ trigger:
       - main
   paths:
     include:
-      - src/Equinor.ProCoSys.Common/*
-      - pipelines/azure-pipeline-common.yml
+      - src/Equinor.ProCoSys.BlobStorage/*
+      #- pipelines/azure-pipeline-blobstorage.yml
 
 pr:
   branches:
@@ -18,8 +18,8 @@ pr:
     - main
   paths:
     include:
-      - src/Equinor.ProCoSys.Common/*
-      - pipelines/azure-pipeline-common.yml
+      - src/Equinor.ProCoSys.BlobStorage/*
+      #- pipelines/azure-pipeline-blobstorage.yml
 
 variables:
   #System.Debug: 'true'
@@ -54,11 +54,11 @@ stages:
       displayName: 'Run tests in $(buildConfiguration)'
       inputs:
         command: test
-        projects: '**/Equinor.ProCoSys.Common.Tests/*.csproj'
+        projects: '**/Equinor.ProCoSys.BlobStorage.Tests/*.csproj'
         arguments: '--configuration $(buildConfiguration)'
 
-- stage: "PublishAndPackCommon"
-  displayName: 'Publish and Pack Common'
+- stage: "PublishAndPackBlobStorage"
+  displayName: 'Publish and Pack BlobStorage'
   dependsOn: 'Build'
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   jobs:
@@ -83,7 +83,7 @@ stages:
         pwsh: true
         script: |
           # Set powershell variables
-          $path = "src/Equinor.ProCoSys.Common/Equinor.ProCoSys.Common.csproj"
+          $path = "src/Equinor.ProCoSys.BlobStorage/Equinor.ProCoSys.BlobStorage.csproj"
           $xPath = "/Project/PropertyGroup"
           $element = "VersionPrefix"
           $variableName = "packageVersion" # Name of the pipeline variable used as suffix in referenace. Example $(getVersion.packageVersion)
@@ -107,7 +107,7 @@ stages:
       displayName: 'NuGet pack'
       inputs:
         command: pack
-        packagesToPack: 'src/Equinor.ProCoSys.Common/Equinor.ProCoSys.Common.csproj' 
+        packagesToPack: 'src/Equinor.ProCoSys.BlobStorage/Equinor.ProCoSys.BlobStorage.csproj' 
         packDestination: '$(Build.ArtifactStagingDirectory)\packages\releases'
         version: $(getVersion.packageVersion)
 
