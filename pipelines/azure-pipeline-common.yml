@@ -10,6 +10,7 @@ trigger:
   paths:
     include:
       - src/Equinor.ProCoSys.Common/*
+      - pipelines/azure-pipeline-common.yml
 
 pr:
   branches:
@@ -18,6 +19,7 @@ pr:
   paths:
     include:
       - src/Equinor.ProCoSys.Common/*
+      - pipelines/azure-pipeline-common.yml
 
 variables:
   #System.Debug: 'true'
