@@ -60,8 +60,7 @@ stages:
 - stage: "PublishAndPackBlobStorage"
   displayName: 'Publish and Pack BlobStorage'
   dependsOn: 'Build'
-  #condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-  condition: succeeded()
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   jobs:
   - job: PackAndPublish
     displayName: Pack Worker, then publish both
