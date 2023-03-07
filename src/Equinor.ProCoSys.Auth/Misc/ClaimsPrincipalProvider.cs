@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 
-namespace Equinor.ProCoSys.Common.Misc
+namespace Equinor.ProCoSys.Auth.Misc
 {
     /// <summary>
     /// Get ClaimsPrincipal from current HttpContext, if any

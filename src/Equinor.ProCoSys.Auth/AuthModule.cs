@@ -2,6 +2,7 @@
 using Equinor.ProCoSys.Auth.Authorization;
 using Equinor.ProCoSys.Auth.Caches;
 using Equinor.ProCoSys.Auth.Client;
+using Equinor.ProCoSys.Auth.Misc;
 using Equinor.ProCoSys.Auth.Permission;
 using Equinor.ProCoSys.Auth.Person;
 using Equinor.ProCoSys.Common.Caches;
