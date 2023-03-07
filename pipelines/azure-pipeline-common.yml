@@ -22,7 +22,7 @@ pr:
       - pipelines/azure-pipeline-common.yml
 
 variables:
-  #System.Debug: 'true'
+  ##System.Debug: 'true'
   vmImageName: 'windows-latest'
   buildConfiguration: 'Release'
 
