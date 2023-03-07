@@ -20,7 +20,7 @@ pr:
       - src/Equinor.ProCoSys.Common/*
 
 variables:
-  System.Debug: 'true'
+  #System.Debug: 'true'
   vmImageName: 'windows-latest'
   buildConfiguration: 'Release'
 
@@ -58,7 +58,8 @@ stages:
 - stage: "PublishAndPackCommon"
   displayName: 'Publish and Pack Common'
   dependsOn: 'Build'
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  #condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  condition: succeeded()
   jobs:
   - job: PackAndPublish
     displayName: Pack Worker, then publish both
