@@ -9,7 +9,7 @@ trigger:
       - main
   paths:
     include:
-      src/Equinor.ProCoSys.Common/*
+      - src/Equinor.ProCoSys.Common/*
 
 pr:
   branches:
@@ -17,7 +17,7 @@ pr:
     - main
   paths:
     include:
-      src/Equinor.ProCoSys.Common/*
+      - src/Equinor.ProCoSys.Common/*
 
 variables:
   System.Debug: 'true'
