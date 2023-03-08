@@ -6,7 +6,7 @@
 		<title>$id$</title>
 		<authors>$author$</authors>
 		<owners>$author$</owners>
-		<copyright>Copyright 2015</copyright>
+		<copyright>Copyright 2023</copyright>
 		<description>Library for interact with Azure Storage in ProCoSys</description>
 	</metadata>
 	<files>
