@@ -1,8 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<VersionPrefix>0.1.0</VersionPrefix>
+		<VersionPrefix>0.1.1</VersionPrefix>
 		<TargetFramework>net6.0</TargetFramework>
 		<IncludeReferencedProjects>true</IncludeReferencedProjects>
+		<Company>Equinor</Company>
+		<Description>Library for getting users permissions in ProCoSys. ProCoSys permissions are made as claims in logged on users ClaimsPrincipal</Description>
+		<Authors>Equinor</Authors>
 	</PropertyGroup>
 
 	<ItemGroup>
