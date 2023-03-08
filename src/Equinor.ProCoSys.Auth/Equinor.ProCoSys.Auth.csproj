@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
-		<VersionPrefix>0.0.3</VersionPrefix>
+		<VersionPrefix>0.1.0</VersionPrefix>
 		<TargetFramework>net6.0</TargetFramework>
 		<IncludeReferencedProjects>true</IncludeReferencedProjects>
 	</PropertyGroup>
@@ -20,5 +19,4 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\Equinor.ProCoSys.Common\Equinor.ProCoSys.Common.csproj" />
 	</ItemGroup>
-
 </Project>
