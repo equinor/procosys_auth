@@ -107,7 +107,7 @@ stages:
       displayName: 'NuGet pack'
       inputs:
         command: pack
-        packagesToPack: 'src/Equinor.ProCoSys.BlobStorage/Equinor.ProCoSys.BlobStorage.nuspec' 
+        packagesToPack: 'src/Equinor.ProCoSys.BlobStorage/Equinor.ProCoSys.BlobStorage.csproj' 
         packDestination: '$(Build.ArtifactStagingDirectory)\packages\releases'
         version: $(getVersion.packageVersion)
 
