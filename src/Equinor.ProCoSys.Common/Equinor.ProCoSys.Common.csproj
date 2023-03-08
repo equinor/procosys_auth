@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
 		<VersionPrefix>0.1.0</VersionPrefix>
 		<TargetFramework>net6.0</TargetFramework>
@@ -15,5 +14,4 @@
 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.21.0" />
 		<PackageReference Include="Microsoft.ApplicationInsights.PerfCounterCollector" Version="2.21.0" />
 	</ItemGroup>
-
 </Project>
