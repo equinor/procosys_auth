@@ -9,57 +9,122 @@ namespace Equinor.ProCoSys.Common.Tests
     public class EntityBaseTests
     {
         private readonly byte[] ConvertedRowVersion = {0, 0, 0, 0, 0, 0, 0, 16};
+        private TestableEntityBase _dut;
+        private Mock<INotification> _domainEventMock;
         private const string RowVersion = "AAAAAAAAABA=";
 
-        [TestMethod]
-        public void ReturningEmptyDomainEventsListTest()
+        [TestInitialize]
+        public void SetUp()
         {
-            var dut = new TestableEntityBase();
-            Assert.IsNotNull(dut.PreSaveDomainEvents);
+            // Arrange
+            _dut = new TestableEntityBase();
+            _domainEventMock = new Mock<INotification>();
         }
 
         [TestMethod]
-        public void DomainEventIsAddedToListTest()
+        public void DomainEventsLists_Are_Empty_After_Construct()
         {
-            var dut = new TestableEntityBase();
-            var domainEvent = new Mock<INotification>();
-            dut.AddPreSaveDomainEvent(domainEvent.Object);
-
-            Assert.IsTrue(dut.PreSaveDomainEvents.Contains(domainEvent.Object));
+            Assert.IsNotNull(_dut.PreSaveDomainEvents);
+            Assert.IsNotNull(_dut.PostSaveDomainEvents);
+            Assert.AreEqual(0, _dut.PreSaveDomainEvents.Count);
+            Assert.AreEqual(0, _dut.PostSaveDomainEvents.Count);
         }
 
         [TestMethod]
-        public void DomainEventIsRemovedFromListTest()
+        public void AddPreSaveDomainEvent_Should_AddToPreList()
         {
-            var dut = new TestableEntityBase();
-            var domainEvent = new Mock<INotification>();
-            dut.AddPreSaveDomainEvent(domainEvent.Object);
-            dut.RemovePreSaveDomainEvent(domainEvent.Object);
+            // Act
+            _dut.AddPreSaveDomainEvent(_domainEventMock.Object);
 
-            Assert.IsFalse(dut.PreSaveDomainEvents.Contains(domainEvent.Object));
+            Assert.IsTrue(_dut.PreSaveDomainEvents.Contains(_domainEventMock.Object));
+            Assert.AreEqual(0, _dut.PostSaveDomainEvents.Count);
         }
 
         [TestMethod]
-        public void DomainEventsAreClearedTest()
+        public void AddPostSaveDomainEvent_Should_AddToPostList()
         {
-            var dut = new TestableEntityBase();
-            var domainEvent1 = new Mock<INotification>();
-            dut.AddPreSaveDomainEvent(domainEvent1.Object);
-            var domainEvent2 = new Mock<INotification>();
-            dut.AddPreSaveDomainEvent(domainEvent2.Object);
+            // Act
+            _dut.AddPostSaveDomainEvent(_domainEventMock.Object);
 
-            dut.ClearPreSaveDomainEvents();
-
-            Assert.AreEqual(0, dut.PreSaveDomainEvents.Count);
+            // Assert
+            Assert.IsTrue(_dut.PostSaveDomainEvents.Contains(_domainEventMock.Object));
+            Assert.AreEqual(0, _dut.PreSaveDomainEvents.Count);
         }
 
         [TestMethod]
-        public void GetRowVersion_ShouldReturnLastSetRowVersion()
+        public void RemovePreSaveDomainEvent_Should_RemoveFromPreList()
         {
-            var dut = new TestableEntityBase();
-            Assert.IsNotNull(dut.RowVersion);
-            dut.SetRowVersion(RowVersion);
-            Assert.IsTrue(dut.RowVersion.SequenceEqual(ConvertedRowVersion));
+            // Arrange
+            _dut.AddPreSaveDomainEvent(_domainEventMock.Object);
+            
+            // Act
+            _dut.RemovePreSaveDomainEvent(_domainEventMock.Object);
+
+            // Assert
+            Assert.AreEqual(0, _dut.PreSaveDomainEvents.Count);
+            Assert.AreEqual(0, _dut.PostSaveDomainEvents.Count);
+        }
+
+        [TestMethod]
+        public void RemovePostSaveDomainEvent_Should_RemoveFromPostList()
+        {
+            // Arrange
+            _dut.AddPostSaveDomainEvent(_domainEventMock.Object);
+            
+            // Act
+            _dut.RemovePostSaveDomainEvent(_domainEventMock.Object);
+
+            // Assert
+            Assert.AreEqual(0, _dut.PreSaveDomainEvents.Count);
+            Assert.AreEqual(0, _dut.PostSaveDomainEvents.Count);
+        }
+
+        [TestMethod]
+        public void ClearPreSaveDomainEvents_Should_ClearPreList()
+        {
+            // Arrange
+            var domainEventMock1 = new Mock<INotification>();
+            _dut.AddPreSaveDomainEvent(domainEventMock1.Object);
+            _dut.AddPostSaveDomainEvent(domainEventMock1.Object);
+            
+            var domainEventMock2 = new Mock<INotification>();
+            _dut.AddPreSaveDomainEvent(domainEventMock2.Object);
+            _dut.AddPostSaveDomainEvent(domainEventMock2.Object);
+
+            // Act
+            _dut.ClearPreSaveDomainEvents();
+
+            // Assert
+            Assert.AreEqual(0, _dut.PreSaveDomainEvents.Count);
+            Assert.AreEqual(2, _dut.PostSaveDomainEvents.Count);
+        }
+
+        [TestMethod]
+        public void ClearPostSaveDomainEvents_Should_ClearPostList()
+        {
+            // Arrange
+            var domainEventMock1 = new Mock<INotification>();
+            _dut.AddPreSaveDomainEvent(domainEventMock1.Object);
+            _dut.AddPostSaveDomainEvent(domainEventMock1.Object);
+
+            var domainEventMock2 = new Mock<INotification>();
+            _dut.AddPreSaveDomainEvent(domainEventMock2.Object);
+            _dut.AddPostSaveDomainEvent(domainEventMock2.Object);
+
+            // Act
+            _dut.ClearPostSaveDomainEvents();
+
+            // Assert
+            Assert.AreEqual(2, _dut.PreSaveDomainEvents.Count);
+            Assert.AreEqual(0, _dut.PostSaveDomainEvents.Count);
+        }
+
+        [TestMethod]
+        public void GetRowVersion_Should_ReturnLastSetRowVersion()
+        {
+            Assert.IsNotNull(_dut.RowVersion);
+            _dut.SetRowVersion(RowVersion);
+            Assert.IsTrue(_dut.RowVersion.SequenceEqual(ConvertedRowVersion));
         }
        
         private class TestableEntityBase : EntityBase
