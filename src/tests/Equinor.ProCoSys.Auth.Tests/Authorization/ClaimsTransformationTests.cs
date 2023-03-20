@@ -184,6 +184,26 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         }
 
         [TestMethod]
+        public async Task TransformAsync_ShouldAddRoleClaimsForPermissions_WhenPersonFoundLocalButNotInCache()
+        {
+            _personCacheMock.Setup(p => p.ExistsAsync(Oid)).ReturnsAsync(false);
+
+            var result = await _dut.TransformAsync(_principalWithOid);
+
+            AssertRoleClaimsForPlant1(result.Claims);
+        }
+
+        [TestMethod]
+        public async Task TransformAsync_ShouldAddRoleClaimsForPermissions_WhenPersonNotFoundLocalButInCache()
+        {
+            _localPersonRepositoryMock.Setup(p => p.ExistsAsync(Oid)).ReturnsAsync(false);
+
+            var result = await _dut.TransformAsync(_principalWithOid);
+
+            AssertRoleClaimsForPlant1(result.Claims);
+        }
+
+        [TestMethod]
         public async Task TransformAsync_ShouldNotAddAnyClaims_WhenNoPlantGiven()
         {
             _plantProviderMock.SetupGet(p => p.Plant).Returns((string)null);
