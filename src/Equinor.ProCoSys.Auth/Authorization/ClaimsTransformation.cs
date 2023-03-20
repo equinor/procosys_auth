@@ -68,7 +68,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 return principal;
             }
 
-            if (!await _oidIsValidAsync(userOid.Value))
+            if (!await _azureOidExistsInProCoSysAsync(userOid.Value))
             {
                 _logger.LogInformation($"----- {GetType().Name} early exit, {userOid} don't exists in ProCoSys");
                 return principal;
@@ -100,7 +100,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
 
         public static string GetRestrictionRoleClaimValue(string restrictionRole) => $"{RestrictionRolePrefix}{restrictionRole}";
 
-        private async Task<bool> _oidIsValidAsync(Guid userOid)
+        private async Task<bool> _azureOidExistsInProCoSysAsync(Guid userOid)
             // check if user exists in local repository before checking
             // cache which get user from ProCoSys
             =>
