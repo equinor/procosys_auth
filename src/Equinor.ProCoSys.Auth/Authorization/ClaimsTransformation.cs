@@ -26,6 +26,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
         public static string RestrictionRolePrefix = "PCS_RestrictionRole##";
         public static string NoRestrictions = "%";
 
+        private readonly ILocalPersonRepository _localPersonRepository;
         private readonly IPersonCache _personCache;
         private readonly IPlantProvider _plantProvider;
         private readonly IPermissionCache _permissionCache;
@@ -33,12 +34,14 @@ namespace Equinor.ProCoSys.Auth.Authorization
         private readonly IAuthenticatorOptions _authenticatorOptions;
 
         public ClaimsTransformation(
+            ILocalPersonRepository localPersonRepository,
             IPersonCache personCache,
             IPlantProvider plantProvider,
             IPermissionCache permissionCache,
             ILogger<ClaimsTransformation> logger,
             IAuthenticatorOptions authenticatorOptions)
         {
+            _localPersonRepository = localPersonRepository;
             _personCache = personCache;
             _plantProvider = plantProvider;
             _permissionCache = permissionCache;
@@ -49,6 +52,14 @@ namespace Equinor.ProCoSys.Auth.Authorization
         public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
             _logger.LogInformation($"----- {GetType().Name} start");
+
+            var plantId = _plantProvider.Plant;
+            if (string.IsNullOrEmpty(plantId))
+            {
+                _logger.LogInformation($"----- {GetType().Name} early exit, not a plant request");
+                return principal;
+            }
+
             // Can't use CurrentUserProvider here. Middleware setting current user not called yet. 
             var userOid = principal.Claims.TryGetOid();
             if (!userOid.HasValue)
@@ -57,17 +68,9 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 return principal;
             }
 
-            if (!await _personCache.ExistsAsync(userOid.Value))
+            if (!await _azureOidExistsInProCoSysAsync(userOid.Value))
             {
                 _logger.LogInformation($"----- {GetType().Name} early exit, {userOid} don't exists in ProCoSys");
-                return principal;
-            }
-
-            var plantId = _plantProvider.Plant;
-
-            if (string.IsNullOrEmpty(plantId))
-            {
-                _logger.LogInformation($"----- {GetType().Name} early exit, not a plant request");
                 return principal;
             }
 
@@ -85,7 +88,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 await AddUserDataClaimForAllOpenProjectsToIdentityAsync(claimsIdentity, plantId, userOid.Value);
             }
             if (!_authenticatorOptions.DisableRestrictionRoleUserDataClaims)
-            { 
+            {
                 await AddUserDataClaimForAllRestrictionRolesToIdentityAsync(claimsIdentity, plantId, userOid.Value);
             }
 
@@ -97,12 +100,19 @@ namespace Equinor.ProCoSys.Auth.Authorization
 
         public static string GetRestrictionRoleClaimValue(string restrictionRole) => $"{RestrictionRolePrefix}{restrictionRole}";
 
+        private async Task<bool> _azureOidExistsInProCoSysAsync(Guid userOid)
+            // check if user exists in local repository before checking
+            // cache which get user from ProCoSys
+            =>
+                await _localPersonRepository.ExistsAsync(userOid) ||
+                await _personCache.ExistsAsync(userOid);
+
         private ClaimsIdentity GetOrCreateClaimsIdentityForThisIssuer(ClaimsPrincipal principal)
         {
             var identity = principal.Identities.SingleOrDefault(i => i.Label == ClaimsIssuer);
             if (identity == null)
             {
-                identity = new ClaimsIdentity {Label = ClaimsIssuer};
+                identity = new ClaimsIdentity { Label = ClaimsIssuer };
                 principal.AddIdentity(identity);
             }
             else
