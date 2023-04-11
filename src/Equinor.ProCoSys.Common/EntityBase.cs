@@ -19,13 +19,13 @@ namespace Equinor.ProCoSys.Common
 
         public readonly byte[] RowVersion = new byte[8];
 
-        public void AddPreSaveDomainEvent(INotification eventItem)
+        public void AddPreSaveDomainEvent(IPreSaveDomainEvent eventItem)
         {
             _preSaveDomainEvents ??= new List<INotification>();
             _preSaveDomainEvents.Add(eventItem);
         }
 
-        public void AddPostSaveDomainEvent(INotification eventItem)
+        public void AddPostSaveDomainEvent(IPostSaveDomainEvent eventItem)
         {
             _postSaveDomainEvents ??= new List<INotification>();
             _postSaveDomainEvents.Add(eventItem);
@@ -44,11 +44,11 @@ namespace Equinor.ProCoSys.Common
             }
         }
 
-        public void RemovePreSaveDomainEvent(INotification eventItem) => _preSaveDomainEvents?.Remove(eventItem);
+        public void RemovePreSaveDomainEvent(IPreSaveDomainEvent eventItem) => _preSaveDomainEvents?.Remove(eventItem);
 
         public void ClearPreSaveDomainEvents() => _preSaveDomainEvents.Clear();
 
-        public void RemovePostSaveDomainEvent(INotification eventItem) => _postSaveDomainEvents?.Remove(eventItem);
+        public void RemovePostSaveDomainEvent(IPostSaveDomainEvent eventItem) => _postSaveDomainEvents?.Remove(eventItem);
 
         public void ClearPostSaveDomainEvents() => _postSaveDomainEvents.Clear();
     }
