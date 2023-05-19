@@ -17,7 +17,7 @@ namespace Equinor.ProCoSys.Common
 
         public virtual int Id { get; protected set; }
         
-        public virtual Guid Guid { get; protected set; }
+        public Guid Guid { get; protected set; }
 
         public readonly byte[] RowVersion = new byte[8];
 
