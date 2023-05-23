@@ -6,7 +6,7 @@ namespace Equinor.ProCoSys.Common
 {
     public interface IEventDispatcher
     {
-        Task DispatchPreSaveAsync(IEnumerable<EntityBase> entities, CancellationToken cancellationToken = default);
-        Task DispatchPostSaveAsync(IEnumerable<EntityBase> entities, CancellationToken cancellationToken = default);
+        Task DispatchDomainEventsAsync(IEnumerable<EntityBase> entities, CancellationToken cancellationToken = default);
+        Task DispatchPostSaveEventsAsync(IEnumerable<EntityBase> entities, CancellationToken cancellationToken = default);
     }
 }
