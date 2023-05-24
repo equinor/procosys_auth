@@ -2,7 +2,7 @@
 
 namespace Equinor.ProCoSys.Common;
 
-public class DomainEvent: INotification
+public abstract class DomainEvent: INotification
 {
     public DomainEvent(string displayName) => DisplayName = displayName;
 

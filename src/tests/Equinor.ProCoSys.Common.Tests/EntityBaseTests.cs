@@ -9,7 +9,7 @@ namespace Equinor.ProCoSys.Common.Tests
     {
         private readonly byte[] ConvertedRowVersion = {0, 0, 0, 0, 0, 0, 0, 16};
         private TestableEntityBase _dut;
-        private Mock<DomainEvent> _domainEvent;
+        private DomainEvent _domainEvent;
         private Mock<IPostSaveDomainEvent> _postSaveEvent;
         private const string RowVersion = "AAAAAAAAABA=";
 
@@ -18,7 +18,7 @@ namespace Equinor.ProCoSys.Common.Tests
         {
             // Arrange
             _dut = new TestableEntityBase();
-            _domainEvent = new Mock<DomainEvent>();
+            _domainEvent = new TestableDomainEvent("Test");
             _postSaveEvent = new Mock<IPostSaveDomainEvent>();
         }
 
@@ -35,9 +35,9 @@ namespace Equinor.ProCoSys.Common.Tests
         public void AddDomainEvent_Should_AddToDomainEvents()
         {
             // Act
-            _dut.AddDomainEvent(_domainEvent.Object);
+            _dut.AddDomainEvent(_domainEvent);
 
-            Assert.IsTrue(_dut.DomainEvents.Contains(_domainEvent.Object));
+            Assert.IsTrue(_dut.DomainEvents.Contains(_domainEvent));
             Assert.AreEqual(0, _dut.PostSaveDomainEvents.Count);
         }
 
@@ -56,10 +56,10 @@ namespace Equinor.ProCoSys.Common.Tests
         public void RemoveDomainEvent_Should_RemoveFromDomainEvents()
         {
             // Arrange
-            _dut.AddDomainEvent(_domainEvent.Object);
+            _dut.AddDomainEvent(_domainEvent);
             
             // Act
-            _dut.RemoveDomainEvent(_domainEvent.Object);
+            _dut.RemoveDomainEvent(_domainEvent);
 
             // Assert
             Assert.AreEqual(0, _dut.DomainEvents.Count);
@@ -135,6 +135,13 @@ namespace Equinor.ProCoSys.Common.Tests
         private class TestableEntityBase : EntityBase
         {
             // The base class is abstract, therefor a sub class is needed to test it.
+        }
+    }
+
+    internal class TestableDomainEvent : DomainEvent
+    {
+        public TestableDomainEvent(string displayName) : base(displayName)
+        {
         }
     }
 }
