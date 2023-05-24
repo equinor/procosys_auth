@@ -84,13 +84,13 @@ namespace Equinor.ProCoSys.Common.Tests
         public void ClearDomainEvents_Should_ClearDomainEvents()
         {
             // Arrange
-            var preSaveEventMock1 = new Mock<DomainEvent>();
-            _dut.AddDomainEvent(preSaveEventMock1.Object);
+            var domainMock1 = new TestableDomainEvent("Test1");
+            _dut.AddDomainEvent(domainMock1);
             var postSaveEventMock1 = new Mock<IPostSaveDomainEvent>();
             _dut.AddPostSaveDomainEvent(postSaveEventMock1.Object);
             
-            var preSaveEventMock2 = new Mock<DomainEvent>();
-            _dut.AddDomainEvent(preSaveEventMock2.Object);
+            var domainMock2 = new TestableDomainEvent("Test2");
+            _dut.AddDomainEvent(domainMock2);
             var postSaveEventMock2 = new Mock<IPostSaveDomainEvent>();
             _dut.AddPostSaveDomainEvent(postSaveEventMock2.Object);
 
@@ -106,13 +106,13 @@ namespace Equinor.ProCoSys.Common.Tests
         public void ClearPostSaveDomainEvents_Should_ClearPostSaveDomainEvents()
         {
             // Arrange
-            var preSaveEventMock1 = new Mock<DomainEvent>();
-            _dut.AddDomainEvent(preSaveEventMock1.Object);
+            var domainMock1 = new TestableDomainEvent("Test1");
+            _dut.AddDomainEvent(domainMock1);
             var postSaveEventMock1 = new Mock<IPostSaveDomainEvent>();
             _dut.AddPostSaveDomainEvent(postSaveEventMock1.Object);
 
-            var preSaveEventMock2 = new Mock<DomainEvent>();
-            _dut.AddDomainEvent(preSaveEventMock2.Object);
+            var domainMock2 = new TestableDomainEvent("Test2");
+            _dut.AddDomainEvent(domainMock2);
             var postSaveEventMock2 = new Mock<IPostSaveDomainEvent>();
             _dut.AddPostSaveDomainEvent(postSaveEventMock2.Object);
 
