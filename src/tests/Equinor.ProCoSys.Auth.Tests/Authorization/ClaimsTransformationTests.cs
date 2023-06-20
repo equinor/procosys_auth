@@ -59,15 +59,13 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
             permissionCacheMock.Setup(p => p.GetProjectsForUserAsync(Plant1, Oid))
                 .ReturnsAsync(new List<AccessableProject>
                 {
-                    new AccessableProject
+                    new() 
                     {
-                        HasAccess = true, 
                         Name = ProjectName1_Plant1, 
                         ProCoSysGuid = ProjectGuid1_Plant1
                     },
-                    new AccessableProject
+                    new()
                     {
-                        HasAccess = true, 
                         Name = ProjectName2_Plant1, 
                         ProCoSysGuid = ProjectGuid2_Plant1
                     }
@@ -80,9 +78,8 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
             permissionCacheMock.Setup(p => p.GetProjectsForUserAsync(Plant2, Oid))
                 .ReturnsAsync(new List<AccessableProject>
                 {
-                    new AccessableProject
+                    new()
                     {
-                        HasAccess = true,
                         Name = ProjectName1_Plant2,
                         ProCoSysGuid = ProjectGuid1_Plant2
                     }
