@@ -97,6 +97,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
         }
 
         public static string GetProjectClaimValue(string projectName) => $"{ProjectPrefix}{projectName}";
+        public static string GetProjectClaimValue(Guid projectGuid) => $"{ProjectPrefix}{projectGuid}";
 
         public static string GetRestrictionRoleClaimValue(string restrictionRole) => $"{RestrictionRolePrefix}{restrictionRole}";
 
@@ -138,8 +139,12 @@ namespace Equinor.ProCoSys.Auth.Authorization
 
         private async Task AddUserDataClaimForAllOpenProjectsToIdentityAsync(ClaimsIdentity claimsIdentity, string plantId, Guid userOid)
         {
-            var projectNames = await _permissionCache.GetProjectsForUserAsync(plantId, userOid);
-            projectNames?.ToList().ForEach(projectName => claimsIdentity.AddClaim(CreateClaim(ClaimTypes.UserData, GetProjectClaimValue(projectName))));
+            var projects = await _permissionCache.GetProjectsForUserAsync(plantId, userOid);
+            projects?.ToList().ForEach(project =>
+            {
+                claimsIdentity.AddClaim(CreateClaim(ClaimTypes.UserData, GetProjectClaimValue(project.Name)));
+                claimsIdentity.AddClaim(CreateClaim(ClaimTypes.UserData, GetProjectClaimValue(project.ProCoSysGuid)));
+            });
         }
 
         private async Task AddUserDataClaimForAllRestrictionRolesToIdentityAsync(ClaimsIdentity claimsIdentity, string plantId, Guid userOid)

@@ -9,7 +9,7 @@ namespace Equinor.ProCoSys.Common.Tests
     {
         private readonly byte[] ConvertedRowVersion = {0, 0, 0, 0, 0, 0, 0, 16};
         private TestableEntityBase _dut;
-        private DomainEvent _domainEvent;
+        private IDomainEvent _domainEvent;
         private Mock<IPostSaveDomainEvent> _postSaveEvent;
         private const string RowVersion = "AAAAAAAAABA=";
 
@@ -18,7 +18,7 @@ namespace Equinor.ProCoSys.Common.Tests
         {
             // Arrange
             _dut = new TestableEntityBase();
-            _domainEvent = new TestableDomainEvent("Test");
+            _domainEvent = new TestableDomainEvent();
             _postSaveEvent = new Mock<IPostSaveDomainEvent>();
         }
 
@@ -84,12 +84,12 @@ namespace Equinor.ProCoSys.Common.Tests
         public void ClearDomainEvents_Should_ClearDomainEvents()
         {
             // Arrange
-            var domainMock1 = new TestableDomainEvent("Test1");
+            var domainMock1 = new TestableDomainEvent();
             _dut.AddDomainEvent(domainMock1);
             var postSaveEventMock1 = new Mock<IPostSaveDomainEvent>();
             _dut.AddPostSaveDomainEvent(postSaveEventMock1.Object);
             
-            var domainMock2 = new TestableDomainEvent("Test2");
+            var domainMock2 = new TestableDomainEvent();
             _dut.AddDomainEvent(domainMock2);
             var postSaveEventMock2 = new Mock<IPostSaveDomainEvent>();
             _dut.AddPostSaveDomainEvent(postSaveEventMock2.Object);
@@ -106,12 +106,12 @@ namespace Equinor.ProCoSys.Common.Tests
         public void ClearPostSaveDomainEvents_Should_ClearPostSaveDomainEvents()
         {
             // Arrange
-            var domainMock1 = new TestableDomainEvent("Test1");
+            var domainMock1 = new TestableDomainEvent();
             _dut.AddDomainEvent(domainMock1);
             var postSaveEventMock1 = new Mock<IPostSaveDomainEvent>();
             _dut.AddPostSaveDomainEvent(postSaveEventMock1.Object);
 
-            var domainMock2 = new TestableDomainEvent("Test2");
+            var domainMock2 = new TestableDomainEvent();
             _dut.AddDomainEvent(domainMock2);
             var postSaveEventMock2 = new Mock<IPostSaveDomainEvent>();
             _dut.AddPostSaveDomainEvent(postSaveEventMock2.Object);
@@ -138,10 +138,7 @@ namespace Equinor.ProCoSys.Common.Tests
         }
     }
 
-    internal class TestableDomainEvent : DomainEvent
+    internal class TestableDomainEvent : IDomainEvent
     {
-        public TestableDomainEvent(string displayName) : base(displayName)
-        {
-        }
     }
 }

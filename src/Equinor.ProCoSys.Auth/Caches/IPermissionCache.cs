@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Equinor.ProCoSys.Auth.Permission;
 
 namespace Equinor.ProCoSys.Auth.Caches
 {
@@ -14,8 +15,10 @@ namespace Equinor.ProCoSys.Auth.Caches
 
         Task<IList<string>> GetPermissionsForUserAsync(string plantId, Guid userOid);
 
-        Task<IList<string>> GetProjectsForUserAsync(string plantId, Guid userOid);
+        Task<IList<string>> GetProjectNamesForUserAsync(string plantId, Guid userOid);
+        Task<IList<AccessableProject>> GetProjectsForUserAsync(string plantId, Guid userOid);
         Task<bool> IsAValidProjectForUserAsync(string plantId, Guid userOid, string projectName);
+        Task<bool> IsAValidProjectForUserAsync(string plantId, Guid userOid, Guid projectGuid);
 
         Task<IList<string>> GetRestrictionRolesForUserAsync(string plantId, Guid userOid);
 

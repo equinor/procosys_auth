@@ -77,16 +77,28 @@ namespace Equinor.ProCoSys.Auth.Caches
                 CacheDuration.Minutes,
                 _options.CurrentValue.PermissionCacheMinutes);
 
-        public async Task<IList<string>> GetProjectsForUserAsync(string plantId, Guid userOid)
+        public async Task<IList<string>> GetProjectNamesForUserAsync(string plantId, Guid userOid)
+        {
+            var allProjects = await GetProjectsForUserAsync(plantId, userOid);
+            return allProjects?.Select(p => p.Name).ToList();
+        }
+
+        public async Task<IList<AccessableProject>> GetProjectsForUserAsync(string plantId, Guid userOid)
         {
             var allProjects = await GetAllProjectsForUserAsync(plantId, userOid);
-            return allProjects?.Where(p => p.HasAccess).Select(p => p.Name).ToList();
+            return allProjects?.Where(p => p.HasAccess).ToList();
         }
 
         public async Task<bool> IsAValidProjectForUserAsync(string plantId, Guid userOid, string projectName)
         {
             var allProjects = await GetAllProjectsForUserAsync(plantId, userOid);
             return allProjects != null && allProjects.Any(p => p.Name == projectName);
+        }
+
+        public async Task<bool> IsAValidProjectForUserAsync(string plantId, Guid userOid, Guid projectGuid)
+        {
+            var allProjects = await GetAllProjectsForUserAsync(plantId, userOid);
+            return allProjects != null && allProjects.Any(p => p.ProCoSysGuid == projectGuid);
         }
 
         public async Task<IList<string>> GetRestrictionRolesForUserAsync(string plantId, Guid userOid)

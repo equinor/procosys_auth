@@ -299,10 +299,10 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
         }
 
         [TestMethod]
-        public async Task GetProjectsForUserAsync_ShouldReturnProjectsFromPermissionApiServiceFirstTime()
+        public async Task GetProjectNamesForUserAsync_ShouldReturnProjectsFromPermissionApiServiceFirstTime()
         {
             // Act
-            var result = await _dut.GetProjectsForUserAsync(Plant1IdWithAccess, _currentUserOid);
+            var result = await _dut.GetProjectNamesForUserAsync(Plant1IdWithAccess, _currentUserOid);
 
             // Assert
             AssertProjects(result);
@@ -310,15 +310,15 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
         }
 
         [TestMethod]
-        public async Task GetProjectsForUserAsync_ShouldReturnProjectsFromCacheSecondTime()
+        public async Task GetProjectNamesForUserAsync_ShouldReturnProjectsFromCacheSecondTime()
         {
-            await _dut.GetProjectsForUserAsync(Plant1IdWithAccess, _currentUserOid);
+            await _dut.GetProjectNamesForUserAsync(Plant1IdWithAccess, _currentUserOid);
             // Act
-            var result = await _dut.GetProjectsForUserAsync(Plant1IdWithAccess, _currentUserOid);
+            var result = await _dut.GetProjectNamesForUserAsync(Plant1IdWithAccess, _currentUserOid);
 
             // Assert
             AssertProjects(result);
-            // since GetProjectsForUserAsync has been called twice, but GetProjectsAsync has been called once, the second Get uses cache
+            // since GetProjectNamesForUserAsync has been called twice, but GetProjectsAsync has been called once, the second Get uses cache
             _permissionApiServiceMock.Verify(p => p.GetAllOpenProjectsForCurrentUserAsync(Plant1IdWithAccess), Times.Once);
         }
 
@@ -351,8 +351,8 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
             => await Assert.ThrowsExceptionAsync<Exception>(() => _dut.GetPermissionsForUserAsync(Plant1IdWithAccess, Guid.Empty));
 
         [TestMethod]
-        public async Task GetProjectsForUserAsync_ShouldThrowExceptionWhenOidIsEmpty()
-            => await Assert.ThrowsExceptionAsync<Exception>(() => _dut.GetProjectsForUserAsync(Plant1IdWithAccess, Guid.Empty));
+        public async Task GetProjectNamesForUserAsync_ShouldThrowExceptionWhenOidIsEmpty()
+            => await Assert.ThrowsExceptionAsync<Exception>(() => _dut.GetProjectNamesForUserAsync(Plant1IdWithAccess, Guid.Empty));
 
         [TestMethod]
         public async Task GetRestrictionRolesForUserAsync_ShouldThrowExceptionWhenOidIsEmpty()

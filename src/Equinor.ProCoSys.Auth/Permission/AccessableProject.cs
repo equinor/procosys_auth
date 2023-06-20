@@ -1,11 +1,12 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 
 namespace Equinor.ProCoSys.Auth.Permission
 {
-    [DebuggerDisplay("{Name} {Id} {HasAccess}")]
+    [DebuggerDisplay("{Name} {ProCoSysGuid} {HasAccess}")]
     public class AccessableProject
     {
-        public int Id { get; set; }
+        public Guid ProCoSysGuid { get; set; }
         public string Name { get; set; }
         public bool HasAccess { get; set; }
     }
