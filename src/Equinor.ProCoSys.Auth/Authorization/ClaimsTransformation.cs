@@ -138,7 +138,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
 
         private async Task AddUserDataClaimForAllOpenProjectsToIdentityAsync(ClaimsIdentity claimsIdentity, string plantId, Guid userOid)
         {
-            var projectNames = await _permissionCache.GetProjectsForUserAsync(plantId, userOid);
+            var projectNames = await _permissionCache.GetProjectNamesForUserAsync(plantId, userOid);
             projectNames?.ToList().ForEach(projectName => claimsIdentity.AddClaim(CreateClaim(ClaimTypes.UserData, GetProjectClaimValue(projectName))));
         }
 

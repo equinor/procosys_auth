@@ -52,14 +52,14 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
             permissionCacheMock.Setup(p => p.HasUserAccessToPlantAsync(Plant2, Oid)).ReturnsAsync(true);
             permissionCacheMock.Setup(p => p.GetPermissionsForUserAsync(Plant1, Oid))
                 .ReturnsAsync(new List<string> {Permission1_Plant1, Permission2_Plant1});
-            permissionCacheMock.Setup(p => p.GetProjectsForUserAsync(Plant1, Oid))
+            permissionCacheMock.Setup(p => p.GetProjectNamesForUserAsync(Plant1, Oid))
                 .ReturnsAsync(new List<string> {Project1_Plant1, Project2_Plant1});
             permissionCacheMock.Setup(p => p.GetRestrictionRolesForUserAsync(Plant1, Oid))
                 .ReturnsAsync(new List<string> {Restriction1_Plant1, Restriction2_Plant1});
 
             permissionCacheMock.Setup(p => p.GetPermissionsForUserAsync(Plant2, Oid))
                 .ReturnsAsync(new List<string> {Permission1_Plant2});
-            permissionCacheMock.Setup(p => p.GetProjectsForUserAsync(Plant2, Oid))
+            permissionCacheMock.Setup(p => p.GetProjectNamesForUserAsync(Plant2, Oid))
                 .ReturnsAsync(new List<string> {Project1_Plant2});
             permissionCacheMock.Setup(p => p.GetRestrictionRolesForUserAsync(Plant2, Oid))
                 .ReturnsAsync(new List<string> {Restriction1_Plant2});
