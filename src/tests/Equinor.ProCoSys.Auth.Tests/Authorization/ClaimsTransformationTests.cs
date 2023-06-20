@@ -26,11 +26,11 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         private readonly string Permission2_Plant1 = "B";
         private readonly string Permission1_Plant2 = "C";
         private readonly string ProjectName1_Plant1 = "Pro1";
-        private readonly Guid ProjectGuid1_Plant1 = new Guid("11111111-1111-1111-1111-111111111111");
+        private readonly Guid ProjectGuid1_Plant1 = new("11111111-1111-1111-1111-111111111111");
         private readonly string ProjectName2_Plant1 = "Pro2";
-        private readonly Guid ProjectGuid2_Plant1 = new Guid("22222222-2222-2222-2222-222222222222");
+        private readonly Guid ProjectGuid2_Plant1 = new("22222222-2222-2222-2222-222222222222");
         private readonly string ProjectName1_Plant2 = "Pro3";
-        private readonly Guid ProjectGuid1_Plant2 = new Guid("33333333-3333-3333-3333-333333333333");
+        private readonly Guid ProjectGuid1_Plant2 = new("33333333-3333-3333-3333-333333333333");
         private readonly string Restriction1_Plant1 = "Res1";
         private readonly string Restriction2_Plant1 = "Res2";
         private readonly string Restriction1_Plant2 = "Res3";
