@@ -19,7 +19,7 @@ namespace Equinor.ProCoSys.Common
 
         public readonly byte[] RowVersion = new byte[8];
 
-        public void AddDomainEvent(DomainEvent eventItem)
+        public void AddDomainEvent(IDomainEvent eventItem)
         {
             _domainEvents ??= new List<INotification>();
             _domainEvents.Add(eventItem);
@@ -44,7 +44,7 @@ namespace Equinor.ProCoSys.Common
             }
         }
 
-        public void RemoveDomainEvent(DomainEvent eventItem) => _domainEvents?.Remove(eventItem);
+        public void RemoveDomainEvent(IDomainEvent eventItem) => _domainEvents?.Remove(eventItem);
 
         public void ClearDomainEvents() => _domainEvents.Clear();
 
