@@ -37,6 +37,7 @@ namespace Equinor.ProCoSys.Auth
             services.AddScoped<ICurrentUserProvider>(x => x.GetRequiredService<CurrentUserProvider>());
             services.AddScoped<ICurrentUserSetter>(x => x.GetRequiredService<CurrentUserProvider>());
             services.AddScoped<IBearerTokenSetterForAll, BearerTokenSetterForAll>();
+            services.AddScoped<IRestrictionRolesChecker, RestrictionRolesChecker>();
 
             // Singleton - Created the first time they are requested
             services.AddSingleton<ICacheManager, CacheManager>();
