@@ -7,17 +7,30 @@ namespace Equinor.ProCoSys.Common.Telemetry
 {
     public class ConsoleTelemetryClient : ITelemetryClient
     {
-        public void TrackEvent(string name, Dictionary<string, string> properties)
+        public void TrackEvent(string name, Dictionary<string, string> properties, Dictionary<string, double> metrics = null)
         {
             var builder = new StringBuilder();
             builder.Append($"Event:\t{name}:");
 
             if (properties != null && properties.Any())
             {
+                builder.Append(Environment.NewLine);
+                builder.Append("Properties");
                 foreach (var property in properties)
                 {
                     builder.Append(Environment.NewLine);
                     builder.Append($"\t{property.Key}: {property.Value}");
+                }
+            }
+
+            if (metrics != null && metrics.Any())
+            {
+                builder.Append(Environment.NewLine);
+                builder.Append("Metrics");
+                foreach (var metric in metrics)
+                {
+                    builder.Append(Environment.NewLine);
+                    builder.Append($"\t{metric.Key}: {metric.Value}");
                 }
             }
 
