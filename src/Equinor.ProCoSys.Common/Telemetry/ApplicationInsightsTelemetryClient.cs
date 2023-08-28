@@ -19,8 +19,8 @@ namespace Equinor.ProCoSys.Common.Telemetry
             _ai = new TelemetryClient(telemetryConfiguration);
         }
 
-        public void TrackEvent(string name, Dictionary<string, string> properties)
-            => _ai.TrackEvent(name, properties);
+        public void TrackEvent(string name, Dictionary<string, string> properties, Dictionary<string, double> metrics = null)
+            => _ai.TrackEvent(name, properties, metrics);
 
         public void TrackMetric(string name, double metric)
             => _ai.GetMetric(name).TrackValue(metric);
