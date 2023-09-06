@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<VersionPrefix>1.0.2</VersionPrefix>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
 		<Company>Equinor</Company>
 		<Description>Library for interact with Azure Storage in ProCoSys</Description>
 		<Authors>Equinor</Authors>
