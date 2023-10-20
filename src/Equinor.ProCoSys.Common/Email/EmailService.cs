@@ -65,18 +65,16 @@ namespace Equinor.ProCoSys.Common.Email
 
         public static bool IsValidEmailAddress(string emailAddr)
         {
-            var valid = true;
-
             try
             {
                 var emailAddress = new MailAddress(emailAddr);
             }
             catch
             {
-                valid = false;
+                return false;
             }
 
-            return valid;
+            return true;
         }
     }
 }
