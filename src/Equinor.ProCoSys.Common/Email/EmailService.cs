@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
@@ -22,11 +23,19 @@ namespace Equinor.ProCoSys.Common.Email
 
             if (_emailOptions.Enabled)
             {
-                _client = new SmtpClient(_emailOptions.Server, _emailOptions.Port)
+                try
                 {
-                    EnableSsl = _emailOptions.EnableSsl,
-                    Credentials = new NetworkCredential(_emailOptions.From, _emailOptions.Password)
-                };
+                    _client = new SmtpClient(_emailOptions.Server, _emailOptions.Port)
+                    {
+                        EnableSsl = _emailOptions.EnableSsl,
+                        Credentials = new NetworkCredential(_emailOptions.From, _emailOptions.Password)
+                    };
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Email service was not enabled. " + ex.Message);
+                    throw;
+                }
             }
         }
 
@@ -40,14 +49,34 @@ namespace Equinor.ProCoSys.Common.Email
 
                 foreach (var email in emails.Skip(1))
                 {
+                    if (!IsValidEmailAddress(email))
+                    {
+                        throw new Exception($"Not able to send email because of invalid email-address: '${email}'");
+                    }
+
                     message.To.Add(email);
                 }
 
                 return _client.SendMailAsync(message, token);
             }
-                
-            _logger.LogWarning("Email sending was requested, but service is not enabled.");
-            return Task.CompletedTask;
+
+            throw new Exception("Email sending was requested, but service is not enabled.");
+        }
+
+        public static bool IsValidEmailAddress(string emailAddr)
+        {
+            var valid = true;
+
+            try
+            {
+                var emailAddress = new MailAddress(emailAddr);
+            }
+            catch
+            {
+                valid = false;
+            }
+
+            return valid;
         }
     }
 }
