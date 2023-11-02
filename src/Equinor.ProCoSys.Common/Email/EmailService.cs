@@ -1,53 +1,98 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Graph;
+using Microsoft.Graph.Models;
 
 namespace Equinor.ProCoSys.Common.Email
 {
     public class EmailService : IEmailService
     {
         private readonly EmailOptions _emailOptions;
-        private readonly SmtpClient _client;
-        private readonly ILogger _logger;
 
-        public EmailService(IOptionsMonitor<EmailOptions> emailOptions, ILogger<EmailService> logger)
+        private readonly ILogger _logger;
+        private readonly string _mailCredentialTenantId;
+        private readonly string _mailCredentialClientId;
+        private readonly string _mailCredentialSecret;
+        private readonly string _mailUserOid;
+
+        public EmailService(IOptionsMonitor<EmailOptions> emailOptions, IOptionsMonitor<GraphOptions> graphOptions, ILogger<EmailService> logger)
         {
+            _mailCredentialTenantId = graphOptions.CurrentValue.TenantId;
+            _mailCredentialClientId = graphOptions.CurrentValue.ClientId;
+            _mailCredentialSecret = graphOptions.CurrentValue.ClientSecret;
+            _mailUserOid = emailOptions.CurrentValue.MailUserOid;
+
             _logger = logger;
             _emailOptions = emailOptions.CurrentValue;
+        }
 
-            if (_emailOptions.Enabled)
+        public async Task SendEmailsAsync(List<string> emails, string subject, string body,
+            CancellationToken token = default)
+        {
+            EmailValidator.ValidateEmails(emails);
+
+            var credentials = new ClientSecretCredential(
+                _mailCredentialTenantId,
+                _mailCredentialClientId,
+                _mailCredentialSecret
+                );
+
+            var graphServiceClient = new GraphServiceClient(credentials);
+            var graphMessage = new Message
             {
-                _client = new SmtpClient(_emailOptions.Server, _emailOptions.Port)
+                From = new Recipient {
+                    EmailAddress = new EmailAddress { Address = emails[0] }
+                },
+                Subject = subject,
+                Body = new ItemBody
                 {
-                    EnableSsl = _emailOptions.EnableSsl,
-                    Credentials = new NetworkCredential(_emailOptions.From, _emailOptions.Password)
-                };
+                    ContentType = BodyType.Html,
+                    Content = body
+                },
+                ToRecipients = emails.Skip(1).Select(x => new Recipient { EmailAddress = new EmailAddress { Address = x } }).ToList()
+            };
+            try
+            {
+                await graphServiceClient.Users[_mailUserOid]
+                       .SendMail
+                       .PostAsync(new Microsoft.Graph.Users.Item.SendMail.SendMailPostRequestBody()
+                       {
+                           Message = graphMessage,
+                           SaveToSentItems = false
+                       });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"An email with subject {subject.Substring(0,25)} could not be sent.");
+                throw new Exception($"It was not possible to send an email (subject: {subject.Substring(0,25)})", ex);
             }
         }
 
-        public Task SendEmailsAsync(List<string> emails, string subject, string body,
+        public async Task SendMessageAsync(Message graphMessage,
             CancellationToken token = default)
         {
-            if (_client != null)
-            {
-                var message =
-                    new MailMessage(_emailOptions.From, emails[0]) { Subject = subject, Body = body, IsBodyHtml = true };
+            EmailValidator.ValidateEmails(graphMessage.ToRecipients.Select(x => x.EmailAddress.Address).ToList());
 
-                foreach (var email in emails.Skip(1))
-                {
-                    message.To.Add(email);
-                }
+            var credentials = new ClientSecretCredential(
+                _mailCredentialTenantId,
+                _mailCredentialClientId,
+                _mailCredentialSecret
+                );
 
-                return _client.SendMailAsync(message, token);
-            }
-                
-            _logger.LogWarning("Email sending was requested, but service is not enabled.");
-            return Task.CompletedTask;
+            var graphServiceClient = new GraphServiceClient(credentials);
+
+            await graphServiceClient.Users[_mailUserOid]
+                .SendMail
+                .PostAsync(new Microsoft.Graph.Users.Item.SendMail.SendMailPostRequestBody() {
+                    Message = graphMessage, 
+                    SaveToSentItems = false 
+                });
         }
     }
 }
