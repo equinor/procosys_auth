@@ -13,8 +13,6 @@ namespace Equinor.ProCoSys.Common.Email
 {
     public class EmailService : IEmailService
     {
-        private readonly EmailOptions _emailOptions;
-
         private readonly ILogger _logger;
         private readonly string _mailCredentialTenantId;
         private readonly string _mailCredentialClientId;
@@ -29,11 +27,9 @@ namespace Equinor.ProCoSys.Common.Email
             _mailUserOid = emailOptions.CurrentValue.MailUserOid;
 
             _logger = logger;
-            _emailOptions = emailOptions.CurrentValue;
         }
 
-        public async Task SendEmailsAsync(List<string> emails, string subject, string body,
-            CancellationToken token = default)
+        public async Task SendEmailsAsync(List<string> emails, string subject, string body, CancellationToken cancellationToken = default)
         {
             EmailValidator.ValidateEmails(emails);
 
@@ -61,22 +57,37 @@ namespace Equinor.ProCoSys.Common.Email
             {
                 await graphServiceClient.Users[_mailUserOid]
                        .SendMail
-                       .PostAsync(new Microsoft.Graph.Users.Item.SendMail.SendMailPostRequestBody()
+                       .PostAsync(new Microsoft.Graph.Users.Item.SendMail.SendMailPostRequestBody
                        {
                            Message = graphMessage,
-                           SaveToSentItems = false
-                       });
+                           SaveToSentItems = false                           
+                       }, null, cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"An email with subject {subject.Substring(0,25)} could not be sent.");
-                throw new Exception($"It was not possible to send an email (subject: {subject.Substring(0,25)})", ex);
+                _logger.LogWarning(ex, $"An email with subject {subject} could not be sent.");
+                throw new Exception($"It was not possible to send an email (subject: {subject})", ex);
             }
         }
 
         public async Task SendMessageAsync(Message graphMessage,
-            CancellationToken token = default)
+            CancellationToken cancellationToken = default)
         {
+            if (graphMessage == null)
+            {
+                throw new ArgumentNullException(nameof(graphMessage));
+            }
+            if (graphMessage.ToRecipients == null || !graphMessage.ToRecipients.Any())
+            {
+                _logger.LogInformation($"Tried to send mail without any recipients.");
+                throw new Exception($"It was not possible to send an email since it does not contain any recipients.");
+            }
+            if (graphMessage.ToRecipients.Where(x => x.EmailAddress?.Address == null).Any())
+            {
+                _logger.LogInformation($"Tried to send mail to recepients without defining any address.");
+                throw new Exception($"It was not possible to send an email since it does not contain any address for one or more recipients.");
+            }
+
             EmailValidator.ValidateEmails(graphMessage.ToRecipients.Select(x => x.EmailAddress.Address).ToList());
 
             var credentials = new ClientSecretCredential(
@@ -92,7 +103,7 @@ namespace Equinor.ProCoSys.Common.Email
                 .PostAsync(new Microsoft.Graph.Users.Item.SendMail.SendMailPostRequestBody() {
                     Message = graphMessage, 
                     SaveToSentItems = false 
-                });
+                }, null, cancellationToken);
         }
     }
 }
