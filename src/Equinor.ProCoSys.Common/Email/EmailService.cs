@@ -79,16 +79,16 @@ namespace Equinor.ProCoSys.Common.Email
             }
             if (graphMessage.ToRecipients == null || !graphMessage.ToRecipients.Any())
             {
-                _logger.LogInformation($"Tried to send mail without any recipients.");
-                throw new Exception($"It was not possible to send an email since it does not contain any recipients.");
+                _logger.LogInformation("Tried to send mail without any recipients.");
+                throw new Exception("It was not possible to send an email since it does not contain any recipients.");
             }
-            if (graphMessage.ToRecipients.Where(x => x.EmailAddress?.Address == null).Any())
+            if (graphMessage.ToRecipients.Any(x => x.EmailAddress?.Address == null))
             {
-                _logger.LogInformation($"Tried to send mail to recepients without defining any address.");
-                throw new Exception($"It was not possible to send an email since it does not contain any address for one or more recipients.");
+                _logger.LogInformation("Tried to send mail to recipients without defining any address.");
+                throw new Exception("It was not possible to send an email since it does not contain any address for one or more recipients.");
             }
 
-            EmailValidator.ValidateEmails(graphMessage.ToRecipients.Select(x => x.EmailAddress.Address).ToList());
+            EmailValidator.ValidateEmails(graphMessage.ToRecipients.Select(x => x.EmailAddress?.Address).ToList());
 
             var credentials = new ClientSecretCredential(
                 _mailCredentialTenantId,
