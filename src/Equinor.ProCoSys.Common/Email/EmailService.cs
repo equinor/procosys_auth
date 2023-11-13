@@ -42,16 +42,13 @@ namespace Equinor.ProCoSys.Common.Email
             var graphServiceClient = new GraphServiceClient(credentials);
             var graphMessage = new Message
             {
-                From = new Recipient {
-                    EmailAddress = new EmailAddress { Address = emails[0] }
-                },
                 Subject = subject,
                 Body = new ItemBody
                 {
                     ContentType = BodyType.Html,
                     Content = body
                 },
-                ToRecipients = emails.Skip(1).Select(x => new Recipient { EmailAddress = new EmailAddress { Address = x } }).ToList()
+                ToRecipients = emails.Select(x => new Recipient { EmailAddress = new EmailAddress { Address = x } }).ToList()
             };
             try
             {
