@@ -42,6 +42,7 @@ namespace Equinor.ProCoSys.Common.Email
             var graphServiceClient = new GraphServiceClient(credentials);
             var graphMessage = new Message
             {
+                From = new Recipient { EmailAddress = new EmailAddress { Address = "procosys@equinor.com" } },
                 Subject = subject,
                 Body = new ItemBody
                 {
