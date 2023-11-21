@@ -11,11 +11,9 @@ namespace Equinor.ProCoSys.Common
     {
         private List<INotification> _domainEvents;
         private List<INotification> _postSaveDomainEvents;
-        private List<INotification> _postCommitDomainEvents;
 
         public IReadOnlyCollection<INotification> DomainEvents => _domainEvents?.AsReadOnly() ?? (_domainEvents = new List<INotification>()).AsReadOnly();
         public IReadOnlyCollection<INotification> PostSaveDomainEvents => _postSaveDomainEvents?.AsReadOnly() ?? (_postSaveDomainEvents = new List<INotification>()).AsReadOnly();
-        public IReadOnlyCollection<INotification> PostCommitDomainEvents => _postCommitDomainEvents?.AsReadOnly() ?? (_postCommitDomainEvents = new List<INotification>()).AsReadOnly();
 
         public virtual int Id { get; protected set; }
 
@@ -31,12 +29,6 @@ namespace Equinor.ProCoSys.Common
         {
             _postSaveDomainEvents ??= new List<INotification>();
             _postSaveDomainEvents.Add(domainEvent);
-        }
-
-        public void AddPostCommitDomainEvent(IPostCommitDomainEvent domainEvent)
-        {
-            _postCommitDomainEvents ??= new List<INotification>();
-            _postCommitDomainEvents.Add(domainEvent);
         }
 
         public virtual void SetRowVersion(string rowVersion)
@@ -61,10 +53,5 @@ namespace Equinor.ProCoSys.Common
             _postSaveDomainEvents?.Remove(domainEvent);
 
         public void ClearPostSaveDomainEvents() => _postSaveDomainEvents.Clear();
-
-        public void RemovePostCommitDomainEvent(IPostCommitDomainEvent domainEvent) =>
-            _postCommitDomainEvents?.Remove(domainEvent);
-
-        public void ClearPostCommitDomainEvents() => _postCommitDomainEvents.Clear();
     }
 }
