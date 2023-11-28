@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
 
@@ -10,18 +11,36 @@ public class EmailValidator
 {
     public static bool IsValid(string email)
     {
-        var valid = true;
+        // Mostly copied from https://learn.microsoft.com/en-us/dotnet/standard/base-types/how-to-verify-that-strings-are-in-valid-email-format
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
 
         try
         {
-            var emailAddress = new MailAddress(email);
+            // Normalize the domain
+            email = Regex.Replace(email, @"(@)(.+)$", DomainMapper);
+
+            // Examines the domain part of the email and normalizes it.
+            string DomainMapper(Match match)
+            {
+                // Use IdnMapping class to convert Unicode domain names.
+                var idn = new IdnMapping();
+
+                // Pull out and process domain name (throws ArgumentException on invalid)
+                string domainName = idn.GetAscii(match.Groups[2].Value);
+
+                return match.Groups[1].Value + domainName;
+            }
         }
-        catch
+       
+        catch (ArgumentException e)
         {
-            valid = false;
+            return false;
         }
 
-        return valid;
+        return Regex.IsMatch(email,
+            @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+            RegexOptions.IgnoreCase);
     }
 
     public static void ValidateEmail(string email)
