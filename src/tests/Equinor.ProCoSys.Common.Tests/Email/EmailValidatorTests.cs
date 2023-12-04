@@ -14,10 +14,13 @@ namespace Equinor.ProCoSys.Common.Tests.Email
             Assert.IsTrue(EmailValidator.IsValid("TEST@EQUINOR.COM"));
             Assert.IsTrue(EmailValidator.IsValid("test.email@equinor.com"));
             Assert.IsTrue(EmailValidator.IsValid("test@gmail.co.com"));
+            Assert.IsTrue(EmailValidator.IsValid("Is-This-A-Valid-email@equinor.com"));
+            Assert.IsTrue(EmailValidator.IsValid("isThisAValidEmail#'*^()/=,@equinor.com"));
+            Assert.IsTrue(EmailValidator.IsValid("tord+jobbmail@equinor.com"));
         }
 
         [TestMethod]
-        public void ShouldBeInValidEmailAddresses()
+        public void ShouldNotBeValidEmailAddresses()
         {
             Assert.IsFalse(EmailValidator.IsValid("test@equinor"));
             Assert.IsFalse(EmailValidator.IsValid("@equinor.com"));
@@ -28,6 +31,7 @@ namespace Equinor.ProCoSys.Common.Tests.Email
             Assert.IsFalse(EmailValidator.IsValid("test@equinor,com"));
             Assert.IsFalse(EmailValidator.IsValid("test@.equinor.com"));
             Assert.IsFalse(EmailValidator.IsValid("test@gmail@equinor.com"));
-        }
+            Assert.IsFalse(EmailValidator.IsValid("is this a valid email@equinor.com"));
+        } 
     }
 }
