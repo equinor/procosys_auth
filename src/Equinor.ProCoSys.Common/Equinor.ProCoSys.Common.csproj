@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<VersionPrefix>8.0.0</VersionPrefix>
+		<VersionPrefix>2.0.0</VersionPrefix>
 		<TargetFramework>net8.0</TargetFramework>
 		<Company>Equinor</Company>
 		<Description>Library with common code in ProCoSys</Description>
 		<Authors>Equinor</Authors>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
 
 	<ItemGroup>
