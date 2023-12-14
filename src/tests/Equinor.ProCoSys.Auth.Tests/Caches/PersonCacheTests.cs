@@ -7,7 +7,7 @@ using Equinor.ProCoSys.Common.Tests;
 using Equinor.ProCoSys.Common.Time;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using NSubstitute;
 
 namespace Equinor.ProCoSys.Auth.Tests.Caches
 {
@@ -17,26 +17,25 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
         private PersonCache _dut;
         private ProCoSysPerson _person;
         private readonly Guid _currentUserOid = new("{3BFB54C7-91E2-422E-833F-951AD07FE37F}");
-        private Mock<IPersonApiService> _personApiServiceMock;
+        private IPersonApiService _personApiServiceMock;
 
         [TestInitialize]
         public void Setup()
         {
             TimeService.SetProvider(new ManualTimeProvider(new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
 
-            _personApiServiceMock = new Mock<IPersonApiService>();
+            _personApiServiceMock = Substitute.For<IPersonApiService>();
             _person = new ProCoSysPerson { FirstName = "Erling", LastName = "Braut Haaland"};
-            _personApiServiceMock.Setup(p => p.TryGetPersonByOidAsync(_currentUserOid)).ReturnsAsync(_person);
+            _personApiServiceMock.TryGetPersonByOidAsync(_currentUserOid).Returns(_person);
 
-            var optionsMock = new Mock<IOptionsMonitor<CacheOptions>>();
-            optionsMock
-                .Setup(x => x.CurrentValue)
+            var optionsMock = Substitute.For<IOptionsMonitor<CacheOptions>>();
+            optionsMock.CurrentValue
                 .Returns(new CacheOptions());
 
             _dut = new PersonCache(
                 new CacheManager(),
-                _personApiServiceMock.Object,
-                optionsMock.Object);
+                _personApiServiceMock,
+                optionsMock);
         }
 
         [TestMethod]
@@ -47,7 +46,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
 
             // Assert
             AssertPerson(result);
-            _personApiServiceMock.Verify(p => p.TryGetPersonByOidAsync(_currentUserOid), Times.Once);
+            await _personApiServiceMock.Received(1).TryGetPersonByOidAsync(_currentUserOid);
         }
 
         [TestMethod]
@@ -61,7 +60,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
             // Assert
             AssertPerson(result);
             // since GetAsync has been called twice, but TryGetPersonByOidAsync has been called once, the second Get uses cache
-            _personApiServiceMock.Verify(p => p.TryGetPersonByOidAsync(_currentUserOid), Times.Once);
+            await _personApiServiceMock.Received(1).TryGetPersonByOidAsync(_currentUserOid);
         }
 
         private void AssertPerson(ProCoSysPerson person)

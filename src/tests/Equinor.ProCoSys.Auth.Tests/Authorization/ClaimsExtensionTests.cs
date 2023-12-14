@@ -90,7 +90,8 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         [TestMethod]
         public void TryGetGivenName_ShouldReturnNull_WhenGivenNameDoesNotExist()
         {
-            var claims = new List<Claim> { };
+            // ReSharper disable once CollectionNeverUpdated.Local
+            var claims = new List<Claim>( );
 
             var givenName = claims.TryGetGivenName();
 
@@ -160,7 +161,8 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         [TestMethod]
         public void TryGetSurName_ShouldReturnNull_WhenGivenNameDoesNotExist()
         {
-            var claims = new List<Claim> { };
+            // ReSharper disable once CollectionNeverUpdated.Local
+            var claims = new List<Claim>();
 
             var surname = claims.TryGetSurName();
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using NSubstitute;
 
 namespace Equinor.ProCoSys.BlobStorage.Tests
 {
@@ -11,7 +11,7 @@ namespace Equinor.ProCoSys.BlobStorage.Tests
         public void Constructor_Should_Accept_ConnectionString()
         {
             // Arrange
-            var optionsMock = new Mock<IOptionsMonitor<BlobStorageOptions>>();
+            var optionsMock = Substitute.For<IOptionsMonitor<BlobStorageOptions>>();
             var accountName = "pcs";
             var accountKey = "pw";
             var endpoint = "core.windows.net";
@@ -19,10 +19,10 @@ namespace Equinor.ProCoSys.BlobStorage.Tests
             {
                 ConnectionString = $"DefaultEndpointsProtocol=https;AccountName={accountName};AccountKey={accountKey};EndpointSuffix={endpoint}"
             };
-            optionsMock.SetupGet(o => o.CurrentValue).Returns(options);
+            optionsMock.CurrentValue.Returns(options);
             
             // Act
-            var dut = new AzureBlobService(optionsMock.Object);
+            var dut = new AzureBlobService(optionsMock);
 
             // Assert
             Assert.AreEqual(options.ConnectionString, dut.ConnectionString);

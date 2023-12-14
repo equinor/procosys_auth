@@ -6,7 +6,7 @@ using Equinor.ProCoSys.Auth.Client;
 using Equinor.ProCoSys.Auth.Permission;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using NSubstitute;
 
 namespace Equinor.ProCoSys.Auth.Tests.Permission
 {
@@ -14,30 +14,28 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
     public class MainApiPermissionServiceTests
     {
         private readonly Guid _azureOid = Guid.NewGuid();
-        private const string _plant = "PCS$TESTPLANT";
-        private Mock<IOptionsMonitor<MainApiOptions>> _mainApiOptions;
-        private Mock<IMainApiClient> _mainApiClient;
+        private readonly string _plant = "PCS$TESTPLANT";
+        private IOptionsMonitor<MainApiOptions> _mainApiOptionsMock;
+        private IMainApiClient _mainApiClientMock;
         private MainApiPermissionService _dut;
 
         [TestInitialize]
         public void Setup()
         {
-            _mainApiOptions = new Mock<IOptionsMonitor<MainApiOptions>>();
-            _mainApiOptions
-                .Setup(x => x.CurrentValue)
+            _mainApiOptionsMock = Substitute.For<IOptionsMonitor<MainApiOptions>>();
+            _mainApiOptionsMock.CurrentValue
                 .Returns(new MainApiOptions { ApiVersion = "4.0", BaseAddress = "http://example.com" });
-            _mainApiClient = new Mock<IMainApiClient>();
+            _mainApiClientMock = Substitute.For<IMainApiClient>();
 
-            _dut = new MainApiPermissionService(_mainApiClient.Object, _mainApiOptions.Object);
+            _dut = new MainApiPermissionService(_mainApiClientMock, _mainApiOptionsMock);
         }
 
         [TestMethod]
         public async Task GetAllPlants_ShouldReturnCorrectNumberOfPlants()
         {
-            // Arange
-            _mainApiClient
-                .Setup(x => x.QueryAndDeserializeAsApplicationAsync<List<AccessablePlant>>(It.IsAny<string>(), null))
-                .ReturnsAsync(new List<AccessablePlant>
+            // Arrange
+            _mainApiClientMock.QueryAndDeserializeAsApplicationAsync<List<AccessablePlant>>(Arg.Any<string>())
+                .Returns(new List<AccessablePlant>
                 {
                     new() { Id = "PCS$ASGARD", Title = "Åsgard" },
                     new() { Id = "PCS$ASGARD_A", Title = "ÅsgardA" },
@@ -54,11 +52,10 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
         [TestMethod]
         public async Task GetAllPlants_ShouldSetsCorrectProperties()
         {
-            // Arange
+            // Arrange
             var proCoSysPlant = new AccessablePlant { Id = "PCS$ASGARD_B", Title = "ÅsgardB" };
-            _mainApiClient
-                .Setup(x => x.QueryAndDeserializeAsApplicationAsync<List<AccessablePlant>>(It.IsAny<string>(), null))
-                .ReturnsAsync(new List<AccessablePlant> { proCoSysPlant });
+            _mainApiClientMock.QueryAndDeserializeAsApplicationAsync<List<AccessablePlant>>(Arg.Any<string>())
+                .Returns(new List<AccessablePlant> { proCoSysPlant });
             // Act
             var result = await _dut.GetAllPlantsForUserAsync(_azureOid);
 
@@ -72,9 +69,9 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
         public async Task GetPermissions_ShouldReturnThreePermissions_OnValidPlant()
         {
             // Arrange
-            _mainApiClient
-                .SetupSequence(x => x.QueryAndDeserializeAsync<List<string>>(It.IsAny<string>(), null))
-                .ReturnsAsync(new List<string>{ "A", "B", "C" });
+            _mainApiClientMock.QueryAndDeserializeAsync<List<string>>(Arg.Any<string>())
+                .Returns(new List<string> { "A", "B", "C" });
+
             // Act
             var result = await _dut.GetPermissionsForCurrentUserAsync(_plant);
 
@@ -86,9 +83,9 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
         public async Task GetPermissions_ShouldReturnNoPermissions_OnValidPlant()
         {
             // Arrange
-            _mainApiClient
-                .SetupSequence(x => x.QueryAndDeserializeAsync<List<string>>(It.IsAny<string>(), null) )
-                .ReturnsAsync(new List<string>());
+            _mainApiClientMock.QueryAndDeserializeAsync<List<string>>(Arg.Any<string>())
+                .Returns(new List<string>());
+
             // Act
             var result = await _dut.GetPermissionsForCurrentUserAsync(_plant);
 
@@ -110,9 +107,9 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
         public async Task GetAllOpenProjectsAsync_ShouldReturnTwoProjects_OnValidPlant()
         {
             // Arrange
-            _mainApiClient
-                .SetupSequence(x => x.QueryAndDeserializeAsync<List<AccessableProject>>(It.IsAny<string>(), null))
-                .ReturnsAsync(new List<AccessableProject>{ new AccessableProject(), new AccessableProject() });
+            _mainApiClientMock.QueryAndDeserializeAsync<List<AccessableProject>>(Arg.Any<string>())
+                .Returns(new List<AccessableProject> { new(), new() });
+
             // Act
             var result = await _dut.GetAllOpenProjectsForCurrentUserAsync(_plant);
 
@@ -124,9 +121,9 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
         public async Task GetAllOpenProjectsAsync_ShouldReturnNoProjects_OnValidPlant()
         {
             // Arrange
-            _mainApiClient
-                .SetupSequence(x => x.QueryAndDeserializeAsync<List<AccessableProject>>(It.IsAny<string>(), null))
-                .ReturnsAsync(new List<AccessableProject>());
+            _mainApiClientMock.QueryAndDeserializeAsync<List<AccessableProject>>(Arg.Any<string>())
+                .Returns(new List<AccessableProject>());
+
             // Act
             var result = await _dut.GetAllOpenProjectsForCurrentUserAsync(_plant);
 
@@ -148,9 +145,9 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
         public async Task GetRestrictionRolesAsync_ShouldReturnThreePermissions_OnValidPlant()
         {
             // Arrange
-            _mainApiClient
-                .SetupSequence(x => x.QueryAndDeserializeAsync<List<string>>(It.IsAny<string>(), null))
-                .ReturnsAsync(new List<string> { "A", "B", "C" });
+            _mainApiClientMock.QueryAndDeserializeAsync<List<string>>(Arg.Any<string>())
+                .Returns(new List<string> { "A", "B", "C" });
+
             // Act
             var result = await _dut.GetRestrictionRolesForCurrentUserAsync(_plant);
 
@@ -162,9 +159,9 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
         public async Task GetRestrictionRolesAsync_ShouldReturnNoPermissions_OnValidPlant()
         {
             // Arrange
-            _mainApiClient
-                .SetupSequence(x => x.QueryAndDeserializeAsync<List<string>>(It.IsAny<string>(), null))
-                .ReturnsAsync(new List<string>());
+            _mainApiClientMock.QueryAndDeserializeAsync<List<string>>(Arg.Any<string>())
+                .Returns(new List<string>());
+
             // Act
             var result = await _dut.GetRestrictionRolesForCurrentUserAsync(_plant);
 

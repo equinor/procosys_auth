@@ -4,13 +4,13 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Moq;
+using NSubstitute;
 
 namespace Equinor.ProCoSys.Auth.Tests
 {
     internal class FakeHttpMessageHandler : DelegatingHandler
     {
-        private HttpResponseMessage _fakeResponse;
+        private readonly HttpResponseMessage _fakeResponse;
 
         public FakeHttpMessageHandler(HttpResponseMessage responseMessage) =>
             _fakeResponse = responseMessage;
@@ -33,12 +33,11 @@ namespace Equinor.ProCoSys.Auth.Tests
                 BaseAddress = new Uri("http://example.com")
             };
 
-            var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-            httpClientFactoryMock
-                .Setup(x => x.CreateClient(It.IsAny<string>()))
+            var httpClientFactoryMock = Substitute.For<IHttpClientFactory>();
+            httpClientFactoryMock.CreateClient(Arg.Any<string>())
                 .Returns(fakeHttpClient);
 
-            return httpClientFactoryMock.Object;
+            return httpClientFactoryMock;
         }
     }
 }

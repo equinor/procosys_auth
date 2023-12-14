@@ -6,28 +6,28 @@ using Equinor.ProCoSys.Auth.Authentication;
 using Equinor.ProCoSys.Auth.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using NSubstitute;
 
 namespace Equinor.ProCoSys.Auth.Tests.Client
 {
     [TestClass]
     public class MainApiClientTests
     {
-        private Mock<IMainApiAuthenticator> _bearerTokenProvider;
-        private Mock<ILogger<MainApiClient>> _logger;
+        private IMainApiAuthenticator _bearerTokenProviderMock;
+        private ILogger<MainApiClient> _loggerMock;
 
         [TestInitialize]
         public void Setup()
         {
-            _bearerTokenProvider = new Mock<IMainApiAuthenticator>();
-            _logger = new Mock<ILogger<MainApiClient>>();
+            _bearerTokenProviderMock = Substitute.For<IMainApiAuthenticator>();
+            _loggerMock = Substitute.For<ILogger<MainApiClient>>();
         }
 
         [TestMethod]
         public async Task QueryAndDeserialize_ShouldReturnDeserialized_Object_TestAsync()
         {
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "{\"Id\": 123}");
-            var dut = new MainApiClient(httpClientFactory, _bearerTokenProvider.Object, _logger.Object);
+            var dut = new MainApiClient(httpClientFactory, _bearerTokenProviderMock, _loggerMock);
 
             var response = await dut.QueryAndDeserializeAsync<DummyClass>("url");
 
@@ -39,7 +39,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
         public async Task QueryAndDeserialize_ThrowsException_WhenRequestIsNotSuccessful_TestAsync()
         {
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.BadGateway, "");
-            var dut = new MainApiClient(httpClientFactory, _bearerTokenProvider.Object, _logger.Object);
+            var dut = new MainApiClient(httpClientFactory, _bearerTokenProviderMock, _loggerMock);
 
             await Assert.ThrowsExceptionAsync<Exception>(async () => await dut.QueryAndDeserializeAsync<DummyClass>("url"));
         }
@@ -48,7 +48,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
         public async Task QueryAndDeserialize_ThrowsException_WhenInvalidResponseIsReceived_TestAsync()
         {
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "");
-            var dut = new MainApiClient(httpClientFactory, _bearerTokenProvider.Object, _logger.Object);
+            var dut = new MainApiClient(httpClientFactory, _bearerTokenProviderMock, _loggerMock);
 
             await Assert.ThrowsExceptionAsync<JsonException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>("url"));
         }
@@ -57,7 +57,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
         public async Task QueryAndDeserialize_ThrowsException_WhenNoUrl()
         {
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "");
-            var dut = new MainApiClient(httpClientFactory, _bearerTokenProvider.Object, _logger.Object);
+            var dut = new MainApiClient(httpClientFactory, _bearerTokenProviderMock, _loggerMock);
 
             await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>(null));
         }
@@ -66,7 +66,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
         public async Task QueryAndDeserialize_ThrowsException_WhenUrlTooLong()
         {
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "");
-            var dut = new MainApiClient(httpClientFactory, _bearerTokenProvider.Object, _logger.Object);
+            var dut = new MainApiClient(httpClientFactory, _bearerTokenProviderMock, _loggerMock);
 
             await Assert.ThrowsExceptionAsync<ArgumentException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>(new string('u', 2001)));
         }

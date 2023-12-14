@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using NSubstitute;
 
 namespace Equinor.ProCoSys.Common.Tests
 {
@@ -10,7 +10,7 @@ namespace Equinor.ProCoSys.Common.Tests
         private readonly byte[] ConvertedRowVersion = {0, 0, 0, 0, 0, 0, 0, 16};
         private TestableEntityBase _dut;
         private IDomainEvent _domainEvent;
-        private Mock<IPostSaveDomainEvent> _postSaveEvent;
+        private IPostSaveDomainEvent _postSaveEventMock;
         private const string RowVersion = "AAAAAAAAABA=";
 
         [TestInitialize]
@@ -19,7 +19,7 @@ namespace Equinor.ProCoSys.Common.Tests
             // Arrange
             _dut = new TestableEntityBase();
             _domainEvent = new TestableDomainEvent();
-            _postSaveEvent = new Mock<IPostSaveDomainEvent>();
+            _postSaveEventMock = Substitute.For<IPostSaveDomainEvent>();
         }
 
         [TestMethod]
@@ -45,10 +45,10 @@ namespace Equinor.ProCoSys.Common.Tests
         public void AddPostSaveDomainEvent_Should_AddToPostSaveDomainEvents()
         {
             // Act
-            _dut.AddPostSaveDomainEvent(_postSaveEvent.Object);
+            _dut.AddPostSaveDomainEvent(_postSaveEventMock);
 
             // Assert
-            Assert.IsTrue(_dut.PostSaveDomainEvents.Contains(_postSaveEvent.Object));
+            Assert.IsTrue(_dut.PostSaveDomainEvents.Contains(_postSaveEventMock));
             Assert.AreEqual(0, _dut.DomainEvents.Count);
         }
 
@@ -70,10 +70,10 @@ namespace Equinor.ProCoSys.Common.Tests
         public void RemovePostSaveDomainEvent_Should_RemoveFromPostSaveDomainEvents()
         {
             // Arrange
-            _dut.AddPostSaveDomainEvent(_postSaveEvent.Object);
+            _dut.AddPostSaveDomainEvent(_postSaveEventMock);
             
             // Act
-            _dut.RemovePostSaveDomainEvent(_postSaveEvent.Object);
+            _dut.RemovePostSaveDomainEvent(_postSaveEventMock);
 
             // Assert
             Assert.AreEqual(0, _dut.DomainEvents.Count);
@@ -86,13 +86,13 @@ namespace Equinor.ProCoSys.Common.Tests
             // Arrange
             var domainMock1 = new TestableDomainEvent();
             _dut.AddDomainEvent(domainMock1);
-            var postSaveEventMock1 = new Mock<IPostSaveDomainEvent>();
-            _dut.AddPostSaveDomainEvent(postSaveEventMock1.Object);
+            var postSaveEventMock1 = Substitute.For<IPostSaveDomainEvent>();
+            _dut.AddPostSaveDomainEvent(postSaveEventMock1);
             
             var domainMock2 = new TestableDomainEvent();
             _dut.AddDomainEvent(domainMock2);
-            var postSaveEventMock2 = new Mock<IPostSaveDomainEvent>();
-            _dut.AddPostSaveDomainEvent(postSaveEventMock2.Object);
+            var postSaveEventMock2 = Substitute.For<IPostSaveDomainEvent>();
+            _dut.AddPostSaveDomainEvent(postSaveEventMock2);
 
             // Act
             _dut.ClearDomainEvents();
@@ -108,13 +108,13 @@ namespace Equinor.ProCoSys.Common.Tests
             // Arrange
             var domainMock1 = new TestableDomainEvent();
             _dut.AddDomainEvent(domainMock1);
-            var postSaveEventMock1 = new Mock<IPostSaveDomainEvent>();
-            _dut.AddPostSaveDomainEvent(postSaveEventMock1.Object);
+            var postSaveEventMock1 = Substitute.For<IPostSaveDomainEvent>();
+            _dut.AddPostSaveDomainEvent(postSaveEventMock1);
 
             var domainMock2 = new TestableDomainEvent();
             _dut.AddDomainEvent(domainMock2);
-            var postSaveEventMock2 = new Mock<IPostSaveDomainEvent>();
-            _dut.AddPostSaveDomainEvent(postSaveEventMock2.Object);
+            var postSaveEventMock2 = Substitute.For<IPostSaveDomainEvent>();
+            _dut.AddPostSaveDomainEvent(postSaveEventMock2);
 
             // Act
             _dut.ClearPostSaveDomainEvents();
