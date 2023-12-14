@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using NSubstitute;
 
 namespace Equinor.ProCoSys.Auth.Tests
 {
@@ -11,14 +11,14 @@ namespace Equinor.ProCoSys.Auth.Tests
         public void AddPcsAuthIntegration_Should_Return_TheSameService()
         {
             // Arrange
-            var serviceCollectionMock = new Mock<IServiceCollection>();
+            var serviceCollectionMock = Substitute.For<IServiceCollection>();
 
             // Act
             // ReSharper disable once InvokeAsExtensionMethod
-            var result = AuthModule.AddPcsAuthIntegration(serviceCollectionMock.Object);
+            var result = AuthModule.AddPcsAuthIntegration(serviceCollectionMock);
 
             // Assert
-            Assert.AreEqual(serviceCollectionMock.Object, result);
+            Assert.AreEqual(serviceCollectionMock, result);
         }
     }
 }

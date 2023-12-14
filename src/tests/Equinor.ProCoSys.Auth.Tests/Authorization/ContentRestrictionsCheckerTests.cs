@@ -2,7 +2,7 @@
 using Equinor.ProCoSys.Auth.Authorization;
 using Equinor.ProCoSys.Auth.Misc;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using NSubstitute;
 
 namespace Equinor.ProCoSys.Auth.Tests.Authorization
 {
@@ -18,16 +18,20 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         [TestInitialize]
         public void Setup()
         {
-            _normalRestrictionRoleClaim = new Claim(ClaimTypes.UserData, ClaimsTransformation.GetRestrictionRoleClaimValue(RestrictionRole));
-            _explicitNoRestrictionsClaim = new Claim(ClaimTypes.UserData, ClaimsTransformation.GetRestrictionRoleClaimValue(ClaimsTransformation.NoRestrictions));
+            _normalRestrictionRoleClaim = new Claim(
+                ClaimTypes.UserData,
+                ClaimsTransformation.GetRestrictionRoleClaimValue(RestrictionRole));
+            _explicitNoRestrictionsClaim = new Claim(
+                ClaimTypes.UserData,
+                ClaimsTransformation.GetRestrictionRoleClaimValue(ClaimsTransformation.NoRestrictions));
 
             var principal = new ClaimsPrincipal();
             _claimsIdentity = new ClaimsIdentity();
             principal.AddIdentity(_claimsIdentity);
-            var claimsPrincipalProviderMock = new Mock<IClaimsPrincipalProvider>();
-            claimsPrincipalProviderMock.Setup(u => u.GetCurrentClaimsPrincipal()).Returns(principal);
+            var claimsPrincipalProviderMock = Substitute.For<IClaimsPrincipalProvider>();
+            claimsPrincipalProviderMock.GetCurrentClaimsPrincipal().Returns(principal);
             
-            _dut = new RestrictionRolesChecker(claimsPrincipalProviderMock.Object);
+            _dut = new RestrictionRolesChecker(claimsPrincipalProviderMock);
         }
 
         [TestMethod]
