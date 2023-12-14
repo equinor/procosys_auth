@@ -32,7 +32,7 @@ public class EmailValidator
             }
         }
        
-        catch (ArgumentException e)
+        catch (ArgumentException)
         {
             return false;
         }
@@ -44,7 +44,7 @@ public class EmailValidator
 
     public static void ValidateEmail(string email)
     {
-        if (!(IsValid(email)))
+        if (!IsValid(email))
         {
             throw new Exception($"Not able to send email because of invalid email-address: {email}");
         }
@@ -54,7 +54,7 @@ public class EmailValidator
     {
         foreach (var email in emails)
         {
-            EmailValidator.ValidateEmail(email);
+            ValidateEmail(email);
         }
     }
 }
