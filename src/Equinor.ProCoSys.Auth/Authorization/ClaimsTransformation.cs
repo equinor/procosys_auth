@@ -1,12 +1,13 @@
-﻿using System;
-using System.Linq;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using Equinor.ProCoSys.Auth.Authentication;
+﻿using Equinor.ProCoSys.Auth.Authentication;
 using Equinor.ProCoSys.Auth.Caches;
+using Equinor.ProCoSys.Auth.Person;
 using Equinor.ProCoSys.Common.Misc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Equinor.ProCoSys.Auth.Authorization
 {
@@ -21,6 +22,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
     /// </summary>
     public class ClaimsTransformation : IClaimsTransformation
     {
+        public const string Superuser = "SUPERUSER";
         public static string ClaimsIssuer = "ProCoSys";
         public static string ProjectPrefix = "PCS_Project##";
         public static string RestrictionRolePrefix = "PCS_RestrictionRole##";
@@ -53,13 +55,6 @@ namespace Equinor.ProCoSys.Auth.Authorization
         {
             _logger.LogInformation($"----- {GetType().Name} start");
 
-            var plantId = _plantProvider.Plant;
-            if (string.IsNullOrEmpty(plantId))
-            {
-                _logger.LogInformation($"----- {GetType().Name} early exit, not a plant request");
-                return principal;
-            }
-
             // Can't use CurrentUserProvider here. Middleware setting current user not called yet. 
             var userOid = principal.Claims.TryGetOid();
             if (!userOid.HasValue)
@@ -68,9 +63,22 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 return principal;
             }
 
-            if (!await _azureOidExistsInProCoSysAsync(userOid.Value))
+            var proCoSysPerson = await GetProCoSysPersonAsync(userOid.Value);
+            if (proCoSysPerson is null)
             {
                 _logger.LogInformation($"----- {GetType().Name} early exit, {userOid} don't exists in ProCoSys");
+                return principal;
+            }
+            var claimsIdentity = GetOrCreateClaimsIdentityForThisIssuer(principal);
+            if (proCoSysPerson.Super)
+            {
+                AddSuperRoleToIdentity(claimsIdentity);
+            }
+
+            var plantId = _plantProvider.Plant;
+            if (string.IsNullOrEmpty(plantId))
+            {
+                _logger.LogInformation($"----- {GetType().Name} early exit, not a plant request");
                 return principal;
             }
 
@@ -79,8 +87,6 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 _logger.LogInformation($"----- {GetType().Name} early exit, not a valid plant for user");
                 return principal;
             }
-
-            var claimsIdentity = GetOrCreateClaimsIdentityForThisIssuer(principal);
 
             await AddRoleForAllPermissionsToIdentityAsync(claimsIdentity, plantId, userOid.Value);
             if (!_authenticatorOptions.DisableProjectUserDataClaims)
@@ -101,12 +107,18 @@ namespace Equinor.ProCoSys.Auth.Authorization
 
         public static string GetRestrictionRoleClaimValue(string restrictionRole) => $"{RestrictionRolePrefix}{restrictionRole}";
 
-        private async Task<bool> _azureOidExistsInProCoSysAsync(Guid userOid)
+        private async Task<ProCoSysPerson> GetProCoSysPersonAsync(Guid userOid)
+        {
             // check if user exists in local repository before checking
             // cache which get user from ProCoSys
-            =>
-                await _localPersonRepository.ExistsAsync(userOid) ||
-                await _personCache.ExistsAsync(userOid);
+            var proCoSysPerson = await _localPersonRepository.GetAsync(userOid);
+            if (proCoSysPerson is not null)
+            {
+                return proCoSysPerson;
+            }
+
+            return await _personCache.GetAsync(userOid);
+        }
 
         private ClaimsIdentity GetOrCreateClaimsIdentityForThisIssuer(ClaimsPrincipal principal)
         {
@@ -128,6 +140,11 @@ namespace Equinor.ProCoSys.Auth.Authorization
         {
             var oldClaims = identity.Claims.Where(c => c.Issuer == ClaimsIssuer).ToList();
             oldClaims.ForEach(identity.RemoveClaim);
+        }
+
+        private void AddSuperRoleToIdentity(ClaimsIdentity claimsIdentity)
+        {
+            claimsIdentity.AddClaim(CreateClaim(ClaimTypes.Role, Superuser));
         }
 
         private async Task AddRoleForAllPermissionsToIdentityAsync(ClaimsIdentity claimsIdentity, string plantId, Guid userOid)
