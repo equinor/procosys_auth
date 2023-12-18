@@ -13,12 +13,14 @@ namespace Equinor.ProCoSys.Auth.Authorization
 {
     /// <summary>
     /// Implement IClaimsTransformation to extend the ClaimsPrincipal with claims to be used during authorization.
-    /// Claims added only for authenticated and existing users, for requests handling a valid plant for user
-    /// These types of claims are added:
-    ///  * ClaimTypes.Role claim for each user permission
+    /// Claims added only for authenticated users. User must exist in ProCoSys
+    ///  * If ProCoSys user is a superuser, a claim of type ClaimTypes.Role with value SUPERUSER is added.
+    ///    The SUPERUSER claim is added regardless if request is a plant request or not
+    /// For requests handling a valid plant for user, these types of claims are added:
+    ///  * ClaimTypes.Role claim for each user permission (such as TAG/READ)
     ///  * ClaimTypes.UserData claim for each project user has access to. These claim name start with ProjectPrefix
     ///  * ClaimTypes.UserData claim for each restriction role for user. These claim name start with RestrictionRolePrefix
-    ///         (Restriction role = "%" means "User has no restriction roles")
+    ///    (Restriction role = "%" means "User has no restriction roles")
     /// </summary>
     public class ClaimsTransformation : IClaimsTransformation
     {
@@ -73,6 +75,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
             if (proCoSysPerson.Super)
             {
                 AddSuperRoleToIdentity(claimsIdentity);
+                _logger.LogInformation($"----- {GetType().Name}: {userOid} logged in as a ProCoSys superuser");
             }
 
             var plantId = _plantProvider.Plant;
@@ -172,6 +175,6 @@ namespace Equinor.ProCoSys.Auth.Authorization
         }
 
         private static Claim CreateClaim(string claimType, string claimValue)
-            => new Claim(claimType, claimValue, null, ClaimsIssuer);
+            => new(claimType, claimValue, null, ClaimsIssuer);
     }
 }
