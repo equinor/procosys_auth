@@ -1,8 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
-using Equinor.ProCoSys.Auth.Authentication;
-using Equinor.ProCoSys.Auth.Client;
+﻿using Equinor.ProCoSys.Auth.Client;
 using Microsoft.Extensions.Options;
+using System;
+using System.Threading.Tasks;
 
 namespace Equinor.ProCoSys.Auth.Person
 {
