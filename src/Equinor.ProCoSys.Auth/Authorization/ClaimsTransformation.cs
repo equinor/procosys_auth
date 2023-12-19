@@ -25,10 +25,10 @@ namespace Equinor.ProCoSys.Auth.Authorization
     public class ClaimsTransformation : IClaimsTransformation
     {
         public const string Superuser = "SUPERUSER";
-        public static string ClaimsIssuer = "ProCoSys";
-        public static string ProjectPrefix = "PCS_Project##";
-        public static string RestrictionRolePrefix = "PCS_RestrictionRole##";
-        public static string NoRestrictions = "%";
+        public const string ClaimsIssuer = "ProCoSys";
+        public const string ProjectPrefix = "PCS_Project##";
+        public const string RestrictionRolePrefix = "PCS_RestrictionRole##";
+        public const string NoRestrictions = "%";
 
         private readonly ILocalPersonRepository _localPersonRepository;
         private readonly IPersonCache _personCache;
