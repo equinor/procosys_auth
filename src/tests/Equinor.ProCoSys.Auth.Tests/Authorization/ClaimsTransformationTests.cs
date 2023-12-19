@@ -7,6 +7,7 @@ using Equinor.ProCoSys.Auth.Authentication;
 using Equinor.ProCoSys.Auth.Authorization;
 using Equinor.ProCoSys.Auth.Caches;
 using Equinor.ProCoSys.Auth.Permission;
+using Equinor.ProCoSys.Auth.Person;
 using Equinor.ProCoSys.Common.Misc;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -34,7 +35,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         private readonly string Restriction1_Plant1 = "Res1";
         private readonly string Restriction2_Plant1 = "Res2";
         private readonly string Restriction1_Plant2 = "Res3";
-        
+
         private ILocalPersonRepository _localPersonRepositoryMock;
         private IPersonCache _personCacheMock;
         private IPlantProvider _plantProviderMock;
@@ -44,9 +45,14 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         public void Setup()
         {
             _localPersonRepositoryMock = Substitute.For<ILocalPersonRepository>();
-            _localPersonRepositoryMock.ExistsAsync(Oid).Returns(true);
             _personCacheMock = Substitute.For<IPersonCache>();
-            _personCacheMock.ExistsAsync(Oid).Returns(true);
+
+            var proCoSysPersonNotSuper = new ProCoSysPerson
+            {
+                Super = false
+            };
+            _localPersonRepositoryMock.GetAsync(Oid).Returns(proCoSysPersonNotSuper);
+            _personCacheMock.GetAsync(Oid).Returns(proCoSysPersonNotSuper);
 
             _plantProviderMock = Substitute.For<IPlantProvider>();
             _plantProviderMock.Plant.Returns(Plant1);
@@ -103,6 +109,55 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
                 permissionCacheMock,
                 loggerMock,
                 _authenticatorOptionsMock);
+        }
+
+        [TestMethod]
+        public async Task TransformAsync_ShouldNotAddRoleClaimsForSuper_WhenPersonNotSuper()
+        {
+            // Act
+            var result = await _dut.TransformAsync(_principalWithOid);
+
+            // Assert
+            var roleClaims = GetRoleClaims(result.Claims);
+            Assert.IsTrue(roleClaims.All(r => r.Value != ClaimsTransformation.Superuser));
+        }
+
+        [TestMethod]
+        public async Task TransformAsync_ShouldAddRoleClaimsForSuper_WhenPersonIsSuper()
+        {
+            // Arrange 
+            var proCoSysPersonSuper = new ProCoSysPerson
+            {
+                Super = true
+            };
+            _localPersonRepositoryMock.GetAsync(Oid).Returns(proCoSysPersonSuper);
+
+            // Act
+            var result = await _dut.TransformAsync(_principalWithOid);
+
+            // Assert
+            var roleClaims = GetRoleClaims(result.Claims);
+            Assert.IsTrue(roleClaims.Any(r => r.Value == ClaimsTransformation.Superuser));
+        }
+
+        [TestMethod]
+        public async Task TransformAsync_ShouldAddRoleClaimsForSuper_WhenPersonIsSuper_AndNoPlantGiven()
+        {
+            // Arrange 
+            _plantProviderMock.Plant.Returns((string)null);
+            var proCoSysPersonSuper = new ProCoSysPerson
+            {
+                Super = true
+            };
+            _localPersonRepositoryMock.GetAsync(Oid).Returns(proCoSysPersonSuper);
+
+            // Act
+            var result = await _dut.TransformAsync(_principalWithOid);
+
+            // Assert
+            var roleClaims = GetRoleClaims(result.Claims);
+            Assert.AreEqual(1, roleClaims.Count);
+            Assert.IsTrue(roleClaims.Any(r => r.Value == ClaimsTransformation.Superuser));
         }
 
         [TestMethod]

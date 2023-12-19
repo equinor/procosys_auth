@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Equinor.ProCoSys.Auth.Person;
 
 namespace Equinor.ProCoSys.Auth.Authorization
 {
@@ -9,5 +10,6 @@ namespace Equinor.ProCoSys.Auth.Authorization
     public interface ILocalPersonRepository
     {
         Task<bool> ExistsAsync(Guid userOid);
+        Task<ProCoSysPerson> GetAsync(Guid userOid);
     }
 }
