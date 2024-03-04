@@ -68,9 +68,9 @@ namespace Equinor.ProCoSys.BlobStorage
             return blobNames;
         }
 
-        public Uri GetDownloadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn)
+        public Uri GetDownloadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn,string startIPAddress = null, string endIPAddress = null)
         {
-            var sasToken = GetSasToken(container, blobPath, ResourceTypes.BLOB, BlobAccountSasPermissions.Read, startsOn, expiresOn);
+            var sasToken = GetSasToken(container, blobPath, ResourceTypes.BLOB, BlobAccountSasPermissions.Read, startsOn, expiresOn, startIPAddress, endIPAddress);
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
@@ -120,7 +120,7 @@ namespace Equinor.ProCoSys.BlobStorage
             return fullUri.Uri;
         }
 
-        private string GetSasToken(string containerName, string blobName, string resourceType, BlobAccountSasPermissions permissions, DateTimeOffset startsOn, DateTimeOffset expiresOn)
+        private string GetSasToken(string containerName, string blobName, string resourceType, BlobAccountSasPermissions permissions, DateTimeOffset startsOn, DateTimeOffset expiresOn, string startIPAddress = null, string endIPAddress = null)
         {
             var sasBuilder = new BlobSasBuilder
             {
@@ -130,6 +130,12 @@ namespace Equinor.ProCoSys.BlobStorage
                 StartsOn = startsOn,
                 ExpiresOn = expiresOn
             };
+            // Set the IP range for the SAS token
+            if (!string.IsNullOrEmpty(startIPAddress))
+            {
+                if (string.IsNullOrEmpty(endIPAddress)) endIPAddress = startIPAddress;
+                sasBuilder.IPRange = new SasIPRange(System.Net.IPAddress.Parse(startIPAddress), System.Net.IPAddress.Parse(endIPAddress));
+            }
             sasBuilder.SetPermissions(permissions);
             return sasBuilder.ToSasQueryParameters(new StorageSharedKeyCredential(AccountName, AccountKey)).ToString();
         }
