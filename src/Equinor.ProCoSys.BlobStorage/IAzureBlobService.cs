@@ -13,7 +13,7 @@ namespace Equinor.ProCoSys.BlobStorage
         Task<bool> DeleteAsync(string container, string blobPath, CancellationToken cancellationToken = default);
         Task<List<string>> ListAsync(string container, CancellationToken cancellationToken = default);
 
-        Uri GetDownloadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn);
+        Uri GetDownloadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn, string startIPAddress = null, string endIPAddress = null);
         Uri GetUploadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn);
         Uri GetDeleteSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn);
         Uri GetListSasUri(string container, DateTimeOffset startsOn, DateTimeOffset expiresOn);
