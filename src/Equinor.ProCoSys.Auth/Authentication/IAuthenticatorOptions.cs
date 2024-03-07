@@ -9,9 +9,9 @@ namespace Equinor.ProCoSys.Auth.Authentication
     /// </summary>
     public interface IAuthenticatorOptions
     {
-        string Instance { get; }
+        string Authority { get; }
         string ClientId { get; }
-        string Secret { get; }
+        string ClientSecret { get; }
         Guid ObjectId { get; }
 
         /// <summary>

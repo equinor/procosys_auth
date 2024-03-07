@@ -43,7 +43,7 @@ namespace Equinor.ProCoSys.Auth.Authentication
             }
             _options = options;
             _logger = logger;
-            var secret = _options.Secret;
+            var secret = _options.ClientSecret;
             _secretInfo = $"{secret.Substring(0, 2)}***{secret.Substring(secret.Length - 1, 1)}";
             AuthenticationType = AuthenticationType.OnBehalfOf;
         }
@@ -108,8 +108,8 @@ namespace Equinor.ProCoSys.Auth.Authentication
             _logger.LogInformation($"Getting client using {_secretInfo} for {_options.ClientId}");
             return ConfidentialClientApplicationBuilder
                 .Create(_options.ClientId)
-                .WithClientSecret(_options.Secret)
-                .WithAuthority(new Uri(_options.Instance))
+                .WithClientSecret(_options.ClientSecret)
+                .WithAuthority(new Uri(_options.Authority))
                 .Build();
         }
     }
