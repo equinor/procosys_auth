@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Equinor.ProCoSys.Auth.Authentication
 {
@@ -12,7 +11,6 @@ namespace Equinor.ProCoSys.Auth.Authentication
         string Authority { get; }
         string ClientId { get; }
         string ClientSecret { get; }
-        Guid ObjectId { get; }
 
         /// <summary>
         /// set true to NOT add UserData claims for Projects in ClaimsTransformation
