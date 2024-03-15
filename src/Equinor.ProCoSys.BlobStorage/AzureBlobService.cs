@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -44,10 +45,28 @@ namespace Equinor.ProCoSys.BlobStorage
             return res.Status > 199 && res.Status < 300;
         }
 
-        public async Task UploadAsync(string container, string blobPath, Stream content, bool overWrite = false, CancellationToken cancellationToken = default)
+        public async Task UploadAsync(string container, string blobPath, Stream content, string contentType, bool overWrite = false, CancellationToken cancellationToken = default)
         {
             var client = new BlobClient(ConnectionString, container, blobPath);
-            await client.UploadAsync(content, overWrite, cancellationToken);
+
+            BlobUploadOptions options = new()
+            {
+                HttpHeaders = new BlobHttpHeaders
+                {
+                    ContentType = contentType
+                }
+            };
+
+            // Set conditions to ensure overwrite is false, default is true
+            if (!overWrite)
+            {
+                options.Conditions = new BlobRequestConditions
+                {
+                    IfNoneMatch = new ETag("*")
+                };
+            }
+
+            await client.UploadAsync(content, options, cancellationToken);
         }
 
         public async Task<bool> DeleteAsync(string container, string blobPath, CancellationToken cancellationToken = default)
