@@ -48,12 +48,14 @@ namespace Equinor.ProCoSys.BlobStorage
         public async Task UploadAsync(string container, string blobPath, Stream content, string contentType, bool overWrite = false, CancellationToken cancellationToken = default)
         {
             var client = new BlobClient(ConnectionString, container, blobPath);
+            var filename = Path.GetFileName(blobPath);
 
             BlobUploadOptions options = new()
             {
                 HttpHeaders = new BlobHttpHeaders
                 {
-                    ContentType = contentType
+                    ContentType = contentType,
+                    ContentDisposition =  string.Concat("attachment; filename=", filename)
                 }
             };
 
