@@ -55,7 +55,7 @@ namespace Equinor.ProCoSys.BlobStorage
                 HttpHeaders = new BlobHttpHeaders
                 {
                     ContentType = contentType,
-                    ContentDisposition =  string.Concat("attachment; filename=", filename)
+                    ContentDisposition = contentType.StartsWith("image/") ? $"attachment; filename={filename}" : null
                 }
             };
 
