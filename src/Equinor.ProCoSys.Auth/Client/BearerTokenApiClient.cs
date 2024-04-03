@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Equinor.ProCoSys.Auth.Authentication;
 using Microsoft.Extensions.Logging;
@@ -33,24 +34,24 @@ namespace Equinor.ProCoSys.Auth.Client
             _logger = logger;
         }
 
-        public async Task<T> TryQueryAndDeserializeAsync<T>(string url, List<KeyValuePair<string, string>> extraHeaders = null)
-            => await QueryAndDeserializeAsync<T>(url, true, extraHeaders);
+        public async Task<T> TryQueryAndDeserializeAsync<T>(string url, List<KeyValuePair<string, string>> extraHeaders = null, CancellationToken cancellationToken = default)
+            => await QueryAndDeserializeAsync<T>(url, true, extraHeaders, cancellationToken);
 
-        public async Task<T> QueryAndDeserializeAsync<T>(string url, List<KeyValuePair<string, string>> extraHeaders = null)
-            => await QueryAndDeserializeAsync<T>(url, false, extraHeaders);
+        public async Task<T> QueryAndDeserializeAsync<T>(string url, List<KeyValuePair<string, string>> extraHeaders = null, CancellationToken cancellationToken = default)
+            => await QueryAndDeserializeAsync<T>(url, false, extraHeaders, cancellationToken);
 
-        public async Task<T> TryQueryAndDeserializeAsApplicationAsync<T>(string url, List<KeyValuePair<string, string>> extraHeaders = null)
-            => await QueryAndDeserializeAsApplicationAsync<T>(url, true, extraHeaders);
+        public async Task<T> TryQueryAndDeserializeAsApplicationAsync<T>(string url, List<KeyValuePair<string, string>> extraHeaders = null, CancellationToken cancellationToken = default)
+            => await QueryAndDeserializeAsApplicationAsync<T>(url, true, extraHeaders, cancellationToken);
 
-        public async Task<T> QueryAndDeserializeAsApplicationAsync<T>(string url, List<KeyValuePair<string, string>> extraHeaders = null)
-            => await QueryAndDeserializeAsApplicationAsync<T>(url, false, extraHeaders);
+        public async Task<T> QueryAndDeserializeAsApplicationAsync<T>(string url, List<KeyValuePair<string, string>> extraHeaders = null, CancellationToken cancellationToken = default)
+            => await QueryAndDeserializeAsApplicationAsync<T>(url, false, extraHeaders, cancellationToken);
 
-        public async Task PutAsync(string url, HttpContent content)
+        public async Task PutAsync(string url, HttpContent content, CancellationToken cancellationToken = default)
         {
-            var httpClient = await CreateHttpClientAsync();
+            var httpClient = await CreateHttpClientAsync(null, cancellationToken);
 
             var stopWatch = Stopwatch.StartNew();
-            var response = await httpClient.PutAsync(url, content);
+            var response = await httpClient.PutAsync(url, content, cancellationToken);
             stopWatch.Stop();
 
             if (!response.IsSuccessStatusCode)
@@ -60,12 +61,12 @@ namespace Equinor.ProCoSys.Auth.Client
             }
         }
 
-        public async Task PostAsync(string url, HttpContent content)
+        public async Task PostAsync(string url, HttpContent content, CancellationToken cancellationToken = default)
         {
-            var httpClient = await CreateHttpClientAsync();
+            var httpClient = await CreateHttpClientAsync(null, cancellationToken);
 
             var stopWatch = Stopwatch.StartNew();
-            var response = await httpClient.PostAsync(url, content);
+            var response = await httpClient.PostAsync(url, content, cancellationToken);
             stopWatch.Stop();
 
             if (!response.IsSuccessStatusCode)
@@ -75,13 +76,13 @@ namespace Equinor.ProCoSys.Auth.Client
             }
         }
 
-        private async Task<T> QueryAndDeserializeAsApplicationAsync<T>(string url, bool tryGet, List<KeyValuePair<string, string>> extraHeaders)
+        private async Task<T> QueryAndDeserializeAsApplicationAsync<T>(string url, bool tryGet, List<KeyValuePair<string, string>> extraHeaders, CancellationToken cancellationToken = default)
         {
             var oldAuthType = _bearerTokenProvider.AuthenticationType;
             _bearerTokenProvider.AuthenticationType = AuthenticationType.AsApplication;
             try
             {
-                return await QueryAndDeserializeAsync<T>(url, tryGet, extraHeaders);
+                return await QueryAndDeserializeAsync<T>(url, tryGet, extraHeaders, cancellationToken);
             }
             finally
             {
@@ -92,7 +93,8 @@ namespace Equinor.ProCoSys.Auth.Client
         private async Task<T> QueryAndDeserializeAsync<T>(
             string url,
             bool tryGet,
-            List<KeyValuePair<string, string>> extraHeaders = null)
+            List<KeyValuePair<string, string>> extraHeaders = null,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(url))
             {
@@ -104,10 +106,10 @@ namespace Equinor.ProCoSys.Auth.Client
                 throw new ArgumentException("url exceed max 2000 characters", nameof(url));
             }
 
-            var httpClient = await CreateHttpClientAsync(extraHeaders);
+            var httpClient = await CreateHttpClientAsync(extraHeaders, cancellationToken);
 
             var stopWatch = Stopwatch.StartNew();
-            var response = await httpClient.GetAsync(url);
+            var response = await httpClient.GetAsync(url, cancellationToken);
             stopWatch.Stop();
 
             var msg = $"{stopWatch.Elapsed.TotalSeconds}s elapsed when requesting '{url}'. Status: {response.StatusCode}";
@@ -123,17 +125,18 @@ namespace Equinor.ProCoSys.Auth.Client
             }
 
             _logger.LogInformation(msg);
-            var jsonResult = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<T>(jsonResult, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var result = await JsonSerializer.DeserializeAsync<T>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }, cancellationToken);
             return result;
         }
 
-        public async ValueTask<HttpClient> CreateHttpClientAsync(List<KeyValuePair<string, string>> extraHeaders = null)
+        public async ValueTask<HttpClient> CreateHttpClientAsync(List<KeyValuePair<string, string>> extraHeaders = null, CancellationToken cancellationToken = default)
         {
             var httpClient = _httpClientFactory.CreateClient();
             httpClient.Timeout = TimeSpan.FromSeconds(200); //TODO: Technical debth, add this value to config
 
-            var bearerToken = await _bearerTokenProvider.GetBearerTokenAsync();
+            var bearerToken = await _bearerTokenProvider.GetBearerTokenAsync(cancellationToken);
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
             if (extraHeaders != null)
             {

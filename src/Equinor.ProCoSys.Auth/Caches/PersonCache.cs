@@ -44,7 +44,7 @@ namespace Equinor.ProCoSys.Auth.Caches
                 PersonsCacheKey(plant),
                 async () =>
                 {
-                    var persons = await _personApiService.GetAllPersonsAsync(plant, CancellationToken.None);
+                    var persons = await _personApiService.GetAllPersonsAsync(plant, cancellationToken);
                     return persons;
                 },
                 CacheDuration.Minutes,
@@ -56,10 +56,10 @@ namespace Equinor.ProCoSys.Auth.Caches
             return pcsPerson != null;
         }
 
-        private string PersonsCacheKey(Guid userOid)
+        private static string PersonsCacheKey(Guid userOid)
             => $"PERSONS_{userOid.ToString().ToUpper()}";
 
-        private string PersonsCacheKey(string plant)
+        private static string PersonsCacheKey(string plant)
             => $"PERSONS_{plant.ToUpper()}";
     }
 }

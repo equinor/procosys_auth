@@ -7,7 +7,7 @@ namespace Equinor.ProCoSys.Auth.Person
 {
     public interface IPersonApiService
     {
-        Task<ProCoSysPerson> TryGetPersonByOidAsync(Guid azureOid);
-        Task<List<ProCoSysPerson>> GetAllPersonsAsync(string plant, CancellationToken cancellationToken);
+        Task<ProCoSysPerson> TryGetPersonByOidAsync(Guid azureOid, CancellationToken cancellationToken = default);
+        Task<List<ProCoSysPerson>> GetAllPersonsAsync(string plant, CancellationToken cancellationToken = default);
     }
 }

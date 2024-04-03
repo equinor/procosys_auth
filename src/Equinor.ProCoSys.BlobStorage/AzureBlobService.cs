@@ -162,7 +162,10 @@ namespace Equinor.ProCoSys.BlobStorage
             // Set the IP range for the SAS token
             if (!string.IsNullOrEmpty(startIpAddress))
             {
-                if (string.IsNullOrEmpty(endIpAddress)) endIpAddress = startIpAddress;
+                if (string.IsNullOrEmpty(endIpAddress))
+                {
+                    endIpAddress = startIpAddress;
+                }
                 sasBuilder.IPRange = new SasIPRange(System.Net.IPAddress.Parse(startIpAddress), System.Net.IPAddress.Parse(endIpAddress));
             }
             sasBuilder.SetPermissions(permissions);

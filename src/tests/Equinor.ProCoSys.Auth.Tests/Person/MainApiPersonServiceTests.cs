@@ -52,28 +52,28 @@ namespace Equinor.ProCoSys.Auth.Tests.Person
             var plant = "APlant";
             var url = _mainApiOptionsMock.CurrentValue.BaseAddress 
                       + $"/Person/AllPersons?plantId={plant}&api-version={_mainApiOptionsMock.CurrentValue.ApiVersion}";
+            ProCoSysPerson person1 = new()
+            {
+                AzureOid = "asdf-fghj-qwer-tyui",
+                Email = "test@email.com",
+                FirstName = "Ola",
+                LastName = "Hansen",
+                UserName = "oha@mail.com"
+            };
+            ProCoSysPerson person2 = new()
+            {
+                AzureOid = "1234-4567-6789-5432",
+                Email = "test2@email.com",
+                FirstName = "Hans",
+                LastName = "Olsen",
+                UserName = "hans@mail.com"
+            };
 
             // Arrange
             _mainApiClientMock.TryQueryAndDeserializeAsync<List<ProCoSysPerson>>(url)
                 .Returns([
-                    new()
-                    {
-                        AzureOid = "asdf-fghj-qwer-tyui",
-                        Email = "test@email.com",
-                        FirstName = "Ola",
-                        LastName = "Hansen",
-                        UserName = "oha@mail.com",
-                        Id = 5
-                    },
-                    new()
-                    {
-                        AzureOid = "1234-4567-6789-5432",
-                        Email = "test2@email.com",
-                        FirstName = "Hans",
-                        LastName = "Olsen",
-                        UserName = "hans@mail.com",
-                        Id = 5
-                    }
+                    person1,
+                    person2
                 ]);
 
             // Act
@@ -82,6 +82,8 @@ namespace Equinor.ProCoSys.Auth.Tests.Person
             // Assert
             Assert.IsNotNull(result);
             Assert.IsTrue(result.Count == 2);
+            CollectionAssert.Contains(result, person1);
+            CollectionAssert.Contains(result, person2);
         }
     }
 }

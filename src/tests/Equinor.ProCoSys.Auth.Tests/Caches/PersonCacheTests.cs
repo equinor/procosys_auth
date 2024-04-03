@@ -21,6 +21,22 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
         private readonly Guid _currentUserOid = new("{3BFB54C7-91E2-422E-833F-951AD07FE37F}");
         private IPersonApiService _personApiServiceMock;
         private const string TestPlant = "PA";
+        private readonly ProCoSysPerson _person1 = new()
+        {
+            AzureOid = "asdf-fghj-qwer-tyui",
+            Email = "test@email.com",
+            FirstName = "Ola",
+            LastName = "Hansen",
+            UserName = "oha@mail.com"
+        };
+        private readonly ProCoSysPerson _person2 = new()
+        {
+            AzureOid = "1234-4567-6789-5432",
+            Email = "test2@email.com",
+            FirstName = "Hans",
+            LastName = "Olsen",
+            UserName = "hans@mail.com"
+        };
 
         [TestInitialize]
         public void Setup()
@@ -32,22 +48,8 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
             _personApiServiceMock.TryGetPersonByOidAsync(_currentUserOid).Returns(_person);
 
             _personApiServiceMock.GetAllPersonsAsync(TestPlant, CancellationToken.None).Returns([
-                new() {
-                    AzureOid = "asdf-fghj-qwer-tyui",
-                    Email = "test@email.com",
-                    FirstName = "Ola",
-                    LastName = "Hansen",
-                    UserName = "oha@mail.com",
-                    Id = 5
-                },
-                new() {
-                    AzureOid = "1234-4567-6789-5432",
-                    Email = "test2@email.com",
-                    FirstName = "Hans",
-                    LastName = "Olsen",
-                    UserName = "hans@mail.com",
-                    Id = 5
-                }
+                _person1,
+                _person2
             ]);
 
             var optionsMock = Substitute.For<IOptionsMonitor<CacheOptions>>();
@@ -106,6 +108,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
 
             // Assert
             AssertAllPersons(result);
+
             // since GetCheckListAsync has been called twice, but TryGetCheckListByOidAsync has been called once, the second Get uses cache
             await _personApiServiceMock.Received(1).GetAllPersonsAsync(TestPlant, CancellationToken.None);
         }
@@ -115,6 +118,12 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
             Assert.AreEqual(_person.FirstName, person.FirstName);
             Assert.AreEqual(_person.LastName, person.LastName);
         }
-        private static void AssertAllPersons(ICollection list) => Assert.IsTrue(list.Count == 2);
+
+        private void AssertAllPersons(ICollection list)
+        {
+            Assert.IsTrue(list.Count == 2);
+            CollectionAssert.Contains(list, _person1);
+            CollectionAssert.Contains(list, _person2);
+        }
     }
 }

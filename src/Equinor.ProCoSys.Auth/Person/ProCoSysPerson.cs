@@ -12,5 +12,4 @@ public class ProCoSysPerson
     public string Email { get; set; }
     public bool ServicePrincipal { get; set; }
     public bool Super { get; set; }
-    public int Id { get; set; }
 }
