@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Client;
@@ -52,20 +53,20 @@ namespace Equinor.ProCoSys.Auth.Authentication
 
         public void SetBearerToken(string bearerToken) => _bearerTokenFromRequest = bearerToken;
 
-        public async ValueTask<string> GetBearerTokenAsync()
+        public async ValueTask<string> GetBearerTokenAsync(CancellationToken cancellationToken = default)
         {
             switch (AuthenticationType)
             {
                 case AuthenticationType.OnBehalfOf:
-                    return await GetBearerTokenOnBehalfOfCurrentUserAsync();
+                    return await GetBearerTokenOnBehalfOfCurrentUserAsync(cancellationToken);
                 case AuthenticationType.AsApplication:
-                    return await GetBearerTokenForApplicationAsync();
+                    return await GetBearerTokenForApplicationAsync(cancellationToken);
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        private async ValueTask<string> GetBearerTokenOnBehalfOfCurrentUserAsync()
+        private async ValueTask<string> GetBearerTokenOnBehalfOfCurrentUserAsync(CancellationToken cancellationToken = default)
         {
             if (!_oboTokenCache.ContainsKey(_apiScope))
             {
@@ -79,7 +80,7 @@ namespace Equinor.ProCoSys.Auth.Authentication
                 var tokenResult = await app
                     .AcquireTokenOnBehalfOf(new List<string> { _apiScope },
                         new UserAssertion(_bearerTokenFromRequest))
-                    .ExecuteAsync();
+                    .ExecuteAsync(cancellationToken);
 
                 _oboTokenCache.TryAdd(_apiScope, tokenResult.AccessToken);
             }
@@ -87,7 +88,7 @@ namespace Equinor.ProCoSys.Auth.Authentication
             return _oboTokenCache[_apiScope];
         }
 
-        private async ValueTask<string> GetBearerTokenForApplicationAsync()
+        private async ValueTask<string> GetBearerTokenForApplicationAsync(CancellationToken cancellationToken)
         {
             if (!_appTokenCache.ContainsKey(_apiScope))
             {
@@ -95,7 +96,7 @@ namespace Equinor.ProCoSys.Auth.Authentication
 
                 var tokenResult = await app
                     .AcquireTokenForClient(new List<string> { _apiScope })
-                    .ExecuteAsync();
+                    .ExecuteAsync(cancellationToken);
 
                 _appTokenCache.TryAdd(_apiScope, tokenResult.AccessToken);
             }
