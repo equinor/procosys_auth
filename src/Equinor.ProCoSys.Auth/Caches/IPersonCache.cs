@@ -8,8 +8,8 @@ namespace Equinor.ProCoSys.Auth.Caches
 {
     public interface IPersonCache
     {
-        Task<bool> ExistsAsync(Guid userOid);
-        Task<ProCoSysPerson> GetAsync(Guid userOid);
+        Task<bool> ExistsAsync(Guid userOid, bool includeVoidedPerson, CancellationToken cancellationToken);
+        Task<ProCoSysPerson> GetAsync(Guid userOid, bool includeVoidedPerson, CancellationToken cancellationToken);
         Task<List<ProCoSysPerson>> GetAllPersonsAsync(string plant, CancellationToken cancellationToken);
     }
 }

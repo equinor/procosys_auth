@@ -38,7 +38,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Person
                 .Returns(person);
 
             // Act
-            var result = await _dut.TryGetPersonByOidAsync(_azureOid);
+            var result = await _dut.TryGetPersonByOidAsync(_azureOid, false);
 
             // Assert
             Assert.IsNotNull(result);

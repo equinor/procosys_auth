@@ -2,7 +2,7 @@
 
 namespace Equinor.ProCoSys.Auth.Person;
 
-[DebuggerDisplay("{FirstName} {LastName} {AzureOid} sp:{ServicePrincipal} super:{Super}")]
+[DebuggerDisplay("{FirstName} {LastName} {AzureOid} sp:{ServicePrincipal} IsVoided:{IsVoided}")]
 public class ProCoSysPerson
 {
     public string AzureOid { get; set; }
@@ -12,4 +12,5 @@ public class ProCoSysPerson
     public string Email { get; set; }
     public bool ServicePrincipal { get; set; }
     public bool Super { get; set; }
+    public bool IsVoided { get; set; }
 }

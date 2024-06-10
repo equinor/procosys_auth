@@ -25,13 +25,17 @@ namespace Equinor.ProCoSys.Auth.Person
             _apiVersion = options.CurrentValue.ApiVersion;
         }
 
-        public async Task<ProCoSysPerson> TryGetPersonByOidAsync(Guid azureOid, CancellationToken cancellationToken = default)
+        public async Task<ProCoSysPerson> TryGetPersonByOidAsync(
+            Guid azureOid, 
+            bool includeVoidedPerson, 
+            CancellationToken cancellationToken = default)
         {
             var url = $"{_baseAddress}Person" +
                       $"?azureOid={azureOid:D}" +
+                      $"&includeVoidedPerson={includeVoidedPerson.ToString().ToLower()}" +
                       $"&api-version={_apiVersion}";
 
-            // Execute as application. The Person endpoint in Main Api requires
+                      // Execute as application. The Person endpoint in Main Api requires
             // a special role "User.Read.All", which the Azure application registration has
             return await _mainApiClient.TryQueryAndDeserializeAsApplicationAsync<ProCoSysPerson>(url, null, cancellationToken);
         }

@@ -120,7 +120,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 return proCoSysPerson;
             }
 
-            return await _personCache.GetAsync(userOid);
+            return await _personCache.GetAsync(userOid, false, default);
         }
 
         private ClaimsIdentity GetOrCreateClaimsIdentityForThisIssuer(ClaimsPrincipal principal)
