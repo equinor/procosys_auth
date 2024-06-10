@@ -45,7 +45,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
 
             _personApiServiceMock = Substitute.For<IPersonApiService>();
             _person = new ProCoSysPerson { FirstName = "Erling", LastName = "Braut Haaland"};
-            _personApiServiceMock.TryGetPersonByOidAsync(_currentUserOid).Returns(_person);
+            _personApiServiceMock.TryGetPersonByOidAsync(_currentUserOid, false).Returns(_person);
 
             _personApiServiceMock.GetAllPersonsAsync(TestPlant, CancellationToken.None).Returns([
                 _person1,
@@ -66,25 +66,25 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
         public async Task GetAsync_ShouldReturnPersonFromPersonApiServiceFirstTime()
         {
             // Act
-            var result = await _dut.GetAsync(_currentUserOid);
+            var result = await _dut.GetAsync(_currentUserOid, false, default);
 
             // Assert
             AssertPerson(result);
-            await _personApiServiceMock.Received(1).TryGetPersonByOidAsync(_currentUserOid);
+            await _personApiServiceMock.Received(1).TryGetPersonByOidAsync(_currentUserOid, false);
         }
 
         [TestMethod]
         public async Task GetAsync_ShouldReturnPersonsFromCacheSecondTime()
         {
-            await _dut.GetAsync(_currentUserOid);
+            await _dut.GetAsync(_currentUserOid, false, default);
 
             // Act
-            var result = await _dut.GetAsync(_currentUserOid);
+            var result = await _dut.GetAsync(_currentUserOid, false, default);
 
             // Assert
             AssertPerson(result);
             // since GetAsync has been called twice, but TryGetPersonByOidAsync has been called once, the second Get uses cache
-            await _personApiServiceMock.Received(1).TryGetPersonByOidAsync(_currentUserOid);
+            await _personApiServiceMock.Received(1).TryGetPersonByOidAsync(_currentUserOid, false);
         }
 
         [TestMethod]

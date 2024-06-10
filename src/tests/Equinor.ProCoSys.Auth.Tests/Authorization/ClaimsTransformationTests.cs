@@ -52,7 +52,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
                 Super = false
             };
             _localPersonRepositoryMock.GetAsync(Oid).Returns(proCoSysPersonNotSuper);
-            _personCacheMock.GetAsync(Oid).Returns(proCoSysPersonNotSuper);
+            _personCacheMock.GetAsync(Oid, false, default).Returns(proCoSysPersonNotSuper);
 
             _plantProviderMock = Substitute.For<IPlantProvider>();
             _plantProviderMock.Plant.Returns(Plant1);
@@ -252,7 +252,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         public async Task TransformAsync_ShouldNotAddAnyClaims_WhenPersonNotFoundInProCoSys()
         {
             _localPersonRepositoryMock.ExistsAsync(Oid).Returns(false);
-            _personCacheMock.ExistsAsync(Oid).Returns(false);
+            _personCacheMock.ExistsAsync(Oid, false, default).Returns(false);
 
             var result = await _dut.TransformAsync(new ClaimsPrincipal());
 
@@ -264,7 +264,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         [TestMethod]
         public async Task TransformAsync_ShouldAddRoleClaimsForPermissions_WhenPersonFoundLocalButNotInCache()
         {
-            _personCacheMock.ExistsAsync(Oid).Returns(false);
+            _personCacheMock.ExistsAsync(Oid, false, default).Returns(false);
 
             var result = await _dut.TransformAsync(_principalWithOid);
 
