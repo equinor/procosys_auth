@@ -25,6 +25,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
     public class ClaimsTransformation : IClaimsTransformation
     {
         public const string Superuser = "SUPERUSER";
+        public const string PersonExist = "Person-Exists-";
         public const string ClaimsIssuer = "ProCoSys";
         public const string ProjectPrefix = "PCS_Project##";
         public const string RestrictionRolePrefix = "PCS_RestrictionRole##";
@@ -55,41 +56,43 @@ namespace Equinor.ProCoSys.Auth.Authorization
 
         public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
-            _logger.LogInformation($"----- {GetType().Name} start");
+            _logger.LogInformation("----- {Name} start", GetType().Name);
 
             // Can't use CurrentUserProvider here. Middleware setting current user not called yet. 
             var userOid = principal.Claims.TryGetOid();
             if (!userOid.HasValue)
             {
-                _logger.LogInformation($"----- {GetType().Name} early exit, not authenticated yet");
+                _logger.LogInformation("----- {Name} early exit, not authenticated yet", GetType().Name);
                 return principal;
             }
 
             var proCoSysPerson = await GetProCoSysPersonAsync(userOid.Value);
             if (proCoSysPerson is null)
             {
-                _logger.LogInformation($"----- {GetType().Name} early exit, {userOid} don't exists in ProCoSys");
+                _logger.LogInformation("----- {Name} early exit, {UserOid} don\'t exists in ProCoSys", GetType().Name, userOid);
                 return principal;
             }
             var claimsIdentity = GetOrCreateClaimsIdentityForThisIssuer(principal);
             if (proCoSysPerson.Super)
             {
                 AddSuperRoleToIdentity(claimsIdentity);
-                _logger.LogInformation($"----- {GetType().Name}: {userOid} logged in as a ProCoSys superuser");
+                _logger.LogInformation("----- {Name}: {UserOid} logged in as a ProCoSys superuser", GetType().Name, userOid);
             }
 
             var plantId = _plantProvider.Plant;
             if (string.IsNullOrEmpty(plantId))
             {
-                _logger.LogInformation($"----- {GetType().Name} early exit, not a plant request");
+                _logger.LogInformation("----- {Name} early exit, not a plant request", GetType().Name);
                 return principal;
             }
 
             if (!await _permissionCache.HasUserAccessToPlantAsync(plantId, userOid.Value))
             {
-                _logger.LogInformation($"----- {GetType().Name} early exit, not a valid plant for user");
+                _logger.LogInformation("----- {Name} early exit, not a valid plant for user", GetType().Name);
                 return principal;
             }
+            
+            AddPersonExistsClaim(claimsIdentity, proCoSysPerson.AzureOid);
 
             await AddRoleForAllPermissionsToIdentityAsync(claimsIdentity, plantId, userOid.Value);
             if (!_authenticatorOptions.DisableProjectUserDataClaims)
@@ -101,8 +104,13 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 await AddUserDataClaimForAllRestrictionRolesToIdentityAsync(claimsIdentity, plantId, userOid.Value);
             }
 
-            _logger.LogInformation($"----- {GetType().Name} completed");
+            _logger.LogInformation("----- {Name} completed", GetType().Name);
             return principal;
+        }
+
+        private static void AddPersonExistsClaim(ClaimsIdentity claimsIdentity, string azureOid)
+        {
+            claimsIdentity.AddClaim(new Claim(ClaimTypes.UserData, $"{PersonExist}{azureOid}"));
         }
 
         public static string GetProjectClaimValue(string projectName) => $"{ProjectPrefix}{projectName}";
