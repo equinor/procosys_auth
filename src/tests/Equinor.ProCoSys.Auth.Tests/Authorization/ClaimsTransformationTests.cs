@@ -50,7 +50,8 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
 
             var proCoSysPersonNotSuper = new ProCoSysPerson
             {
-                Super = false
+                Super = false,
+                AzureOid = Oid.ToString()
             };
             _localPersonRepositoryMock.GetAsync(Oid).Returns(proCoSysPersonNotSuper);
             _personCacheMock.GetAsync(Oid).Returns(proCoSysPersonNotSuper);
@@ -321,6 +322,25 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
             claims = GetRestrictionRoleClaims(result.Claims);
             Assert.AreEqual(1, claims.Count);
             Assert.IsNotNull(claims.SingleOrDefault(r => r.Value == ClaimsTransformation.GetRestrictionRoleClaimValue(Restriction1_Plant2)));
+        }
+
+        [TestMethod]
+        public async Task TransformAsync_ShouldNAddExistsClaimsFoPerson_WhenPersonExists()
+        {
+            var result = await _dut.TransformAsync(_principalWithOid);
+
+            Assert.IsTrue(result.Claims.PersonExistsLocally(Oid.ToString()));
+        }
+        
+        [TestMethod]
+        public async Task TransformAsync_ShouldNotAddExistsClaimsFoPerson_WhenPersonNotExists()
+        {
+            _localPersonRepositoryMock.GetAsync(Oid).Returns((ProCoSysPerson)null);
+            _personCacheMock.GetAsync(Oid).Returns((ProCoSysPerson)null);
+            
+            var result = await _dut.TransformAsync(_principalWithOid);
+
+            Assert.IsFalse(result.Claims.PersonExistsLocally(Oid.ToString()));
         }
 
         private void AssertRoleClaimsForPlant1(IEnumerable<Claim> claims)

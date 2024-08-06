@@ -102,5 +102,11 @@ namespace Equinor.ProCoSys.Auth.Authorization
             }
             return null;
         }
+        
+        public static bool PersonExistsLocally(this IEnumerable<Claim> claims, string userOid)
+        {
+            return claims.Any(c => c.Type == ClaimTypes.UserData && string.Equals(c.Value,
+                $"{ClaimsTransformation.PersonExist}{userOid}", StringComparison.InvariantCultureIgnoreCase));
+        }
     }
 }
