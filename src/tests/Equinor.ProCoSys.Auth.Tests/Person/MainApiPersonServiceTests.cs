@@ -15,7 +15,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Person
     {
         private readonly Guid _azureOid = Guid.NewGuid();
         private IOptionsMonitor<MainApiOptions> _mainApiOptionsMock;
-        private IMainApiClient _mainApiClientMock;
+        private IMainApiClientForApplication _mainApiClientMock;
         private MainApiPersonService _dut;
 
         [TestInitialize]
@@ -24,7 +24,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Person
             _mainApiOptionsMock = Substitute.For<IOptionsMonitor<MainApiOptions>>();
             _mainApiOptionsMock.CurrentValue
                 .Returns(new MainApiOptions { ApiVersion = "4.0", BaseAddress = "http://example.com" });
-            _mainApiClientMock = Substitute.For<IMainApiClient>();
+            _mainApiClientMock = Substitute.For<IMainApiClientForApplication>();
 
             _dut = new MainApiPersonService(_mainApiClientMock, _mainApiOptionsMock);
         }
@@ -34,7 +34,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Person
         {
             // Arrange
             var person = new ProCoSysPerson { FirstName = "Lars", LastName = "Monsen" };
-            _mainApiClientMock.TryQueryAndDeserializeAsApplicationAsync<ProCoSysPerson>(Arg.Any<string>())
+            _mainApiClientMock.TryQueryAndDeserializeAsync<ProCoSysPerson>(Arg.Any<string>())
                 .Returns(person);
 
             // Act

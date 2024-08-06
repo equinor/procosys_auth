@@ -10,20 +10,13 @@ namespace Equinor.ProCoSys.Auth.Person
     /// <summary>
     /// Service to get Person info from Main, using Main Api
     /// </summary>
-    public class MainApiPersonService : IPersonApiService
+    public class MainApiPersonService(
+        IMainApiClientForApplication mainApiClientForApplication,
+        IOptionsMonitor<MainApiOptions> options)
+        : IPersonApiService
     {
-        private readonly Uri _baseAddress;
-        private readonly string _apiVersion;
-        private readonly IMainApiClient _mainApiClient;
-
-        public MainApiPersonService(
-            IMainApiClient mainApiClient,
-            IOptionsMonitor<MainApiOptions> options)
-        {
-            _mainApiClient = mainApiClient;
-            _baseAddress = new Uri(options.CurrentValue.BaseAddress);
-            _apiVersion = options.CurrentValue.ApiVersion;
-        }
+        private readonly Uri _baseAddress = new(options.CurrentValue.BaseAddress);
+        private readonly string _apiVersion = options.CurrentValue.ApiVersion;
 
         public async Task<ProCoSysPerson> TryGetPersonByOidAsync(
             Guid azureOid, 
@@ -35,9 +28,9 @@ namespace Equinor.ProCoSys.Auth.Person
                       $"&includeVoidedPerson={includeVoidedPerson.ToString().ToLower()}" +
                       $"&api-version={_apiVersion}";
 
-                      // Execute as application. The Person endpoint in Main Api requires
+            // Execute as application. The Person endpoint in Main Api requires
             // a special role "User.Read.All", which the Azure application registration has
-            return await _mainApiClient.TryQueryAndDeserializeAsApplicationAsync<ProCoSysPerson>(url, null, cancellationToken);
+            return await mainApiClientForApplication.TryQueryAndDeserializeAsync<ProCoSysPerson>(url, null, cancellationToken);
         }
 
         public async Task<List<ProCoSysPerson>> GetAllPersonsAsync(string plant, CancellationToken cancellationToken = default)
@@ -45,7 +38,7 @@ namespace Equinor.ProCoSys.Auth.Person
             var url = $"{_baseAddress}Person/AllPersons" +
                       $"?plantId={plant}" +
                       $"&api-version={_apiVersion}";
-            return await _mainApiClient.TryQueryAndDeserializeAsync<List<ProCoSysPerson>>(url, null, cancellationToken);
+            return await mainApiClientForApplication.TryQueryAndDeserializeAsync<List<ProCoSysPerson>>(url, null, cancellationToken);
         }
     }
 }
