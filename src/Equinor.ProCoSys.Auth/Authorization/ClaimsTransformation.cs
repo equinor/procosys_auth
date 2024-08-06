@@ -66,16 +66,14 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 _logger.LogInformation("----- {Name} early exit, not authenticated yet", GetType().Name);
                 return principal;
             }
+            var claimsIdentity = GetOrCreateClaimsIdentityForThisIssuer(principal);
 
-            var proCoSysPerson = await GetProCoSysPersonAsync(userOid.Value);
+            var proCoSysPerson = await GetProCoSysPersonAsync(userOid.Value, claimsIdentity);
             if (proCoSysPerson is null)
             {
                 _logger.LogInformation("----- {Name} early exit, {UserOid} don\'t exists in ProCoSys", GetType().Name, userOid);
                 return principal;
             }
-            var claimsIdentity = GetOrCreateClaimsIdentityForThisIssuer(principal);
-            
-            AddPersonExistsClaim(claimsIdentity, proCoSysPerson.AzureOid);
             
             if (proCoSysPerson.Super)
             {
@@ -120,13 +118,14 @@ namespace Equinor.ProCoSys.Auth.Authorization
 
         public static string GetRestrictionRoleClaimValue(string restrictionRole) => $"{RestrictionRolePrefix}{restrictionRole}";
 
-        private async Task<ProCoSysPerson> GetProCoSysPersonAsync(Guid userOid)
+        private async Task<ProCoSysPerson> GetProCoSysPersonAsync(Guid userOid, ClaimsIdentity claimsIdentity)
         {
             // check if user exists in local repository before checking
             // cache which get user from ProCoSys
             var proCoSysPerson = await _localPersonRepository.GetAsync(userOid);
             if (proCoSysPerson is not null)
             {
+                AddPersonExistsClaim(claimsIdentity, proCoSysPerson.AzureOid);
                 return proCoSysPerson;
             }
 
