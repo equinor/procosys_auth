@@ -10,6 +10,7 @@ using Equinor.ProCoSys.Auth.Permission;
 using Equinor.ProCoSys.Auth.Person;
 using Equinor.ProCoSys.Common.Misc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 
@@ -39,7 +40,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         private ILocalPersonRepository _localPersonRepositoryMock;
         private IPersonCache _personCacheMock;
         private IPlantProvider _plantProviderMock;
-        private IAuthenticatorOptions _authenticatorOptionsMock;
+        private MainApiAuthenticatorOptions _mainApiAuthenticatorOptions;
 
         [TestInitialize]
         public void Setup()
@@ -100,7 +101,12 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
             claimsIdentity.AddClaim(new Claim(ClaimsExtensions.Oid, Oid.ToString()));
             _principalWithOid.AddIdentity(claimsIdentity);
 
-            _authenticatorOptionsMock = Substitute.For<IAuthenticatorOptions>();
+            var authenticatorOptionsMock = Substitute.For<IOptionsMonitor<MainApiAuthenticatorOptions>>();
+            _mainApiAuthenticatorOptions = new MainApiAuthenticatorOptions
+            {
+                MainApiScope = ""
+            };
+            authenticatorOptionsMock.CurrentValue.Returns(_mainApiAuthenticatorOptions);
 
             _dut = new ClaimsTransformation(
                 _localPersonRepositoryMock,
@@ -108,7 +114,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
                 _plantProviderMock,
                 permissionCacheMock,
                 loggerMock,
-                _authenticatorOptionsMock);
+                authenticatorOptionsMock);
         }
 
         [TestMethod]
@@ -189,7 +195,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         public async Task TransformAsync_ShouldNotAddUserDataClaimsForProjects_WhenDisabled()
         {
             // Arrange
-            _authenticatorOptionsMock.DisableProjectUserDataClaims.Returns(true);
+            _mainApiAuthenticatorOptions.DisableProjectUserDataClaims = true;
 
             // Act
             var result = await _dut.TransformAsync(_principalWithOid);
@@ -220,7 +226,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         public async Task TransformAsync_ShouldNotAddUserDataClaimsForRestrictionRole_WhenDisabled()
         {
             // Arrange
-            _authenticatorOptionsMock.DisableRestrictionRoleUserDataClaims.Returns(true);
+            _mainApiAuthenticatorOptions.DisableRestrictionRoleUserDataClaims = true;
 
             // Act
             var result = await _dut.TransformAsync(_principalWithOid);
