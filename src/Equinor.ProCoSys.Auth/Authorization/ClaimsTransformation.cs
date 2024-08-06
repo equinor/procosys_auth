@@ -73,6 +73,9 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 return principal;
             }
             var claimsIdentity = GetOrCreateClaimsIdentityForThisIssuer(principal);
+            
+            AddPersonExistsClaim(claimsIdentity, proCoSysPerson.AzureOid);
+            
             if (proCoSysPerson.Super)
             {
                 AddSuperRoleToIdentity(claimsIdentity);
@@ -92,8 +95,6 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 return principal;
             }
             
-            AddPersonExistsClaim(claimsIdentity, proCoSysPerson.AzureOid);
-
             await AddRoleForAllPermissionsToIdentityAsync(claimsIdentity, plantId, userOid.Value);
             if (!_authenticatorOptions.DisableProjectUserDataClaims)
             {
