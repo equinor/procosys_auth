@@ -329,20 +329,18 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         {
             var result = await _dut.TransformAsync(_principalWithOid);
 
-            Assert.IsTrue(result.Claims.IsPersonCreated(Oid.ToString()));
+            Assert.IsTrue(result.Claims.PersonExistsLocally(Oid.ToString()));
         }
         
         [TestMethod]
         public async Task TransformAsync_ShouldNotAddExistsClaimsFoPerson_WhenPersonNotExists()
         {
-            _principalWithOid = new ClaimsPrincipal();
-            var claimsIdentity = new ClaimsIdentity();
-            claimsIdentity.AddClaim(new Claim(ClaimsExtensions.Oid, "1234019A-56B0-4DFE-BC11-A7E129963A75"));
-            _principalWithOid.AddIdentity(claimsIdentity);
+            _localPersonRepositoryMock.GetAsync(Oid).Returns((ProCoSysPerson)null);
+            _personCacheMock.GetAsync(Oid).Returns((ProCoSysPerson)null);
             
             var result = await _dut.TransformAsync(_principalWithOid);
 
-            Assert.IsFalse(result.Claims.IsPersonCreated(Oid.ToString()));
+            Assert.IsFalse(result.Claims.PersonExistsLocally(Oid.ToString()));
         }
 
         private void AssertRoleClaimsForPlant1(IEnumerable<Claim> claims)
