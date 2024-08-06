@@ -24,10 +24,8 @@ namespace Equinor.ProCoSys.Auth
             services.AddScoped<PlantProvider>();
             services.AddScoped<IPlantProvider>(x => x.GetRequiredService<PlantProvider>());
             services.AddScoped<IPlantSetter>(x => x.GetRequiredService<PlantProvider>());
-            services.AddScoped<MainApiAuthenticator>();
-            services.AddScoped<IMainApiAuthenticator>(x => x.GetRequiredService<MainApiAuthenticator>());
-            services.AddScoped<IBearerTokenSetter>(x => x.GetRequiredService<MainApiAuthenticator>());
-            services.AddScoped<IMainApiClient, MainApiClient>();
+            services.AddScoped<IMainApiClientForUser, MainApiClientForUser>();
+            services.AddScoped<IMainApiClientForApplication, MainApiClientForApplication>();
             services.AddScoped<IPersonApiService, MainApiPersonService>();
             services.AddScoped<IPermissionApiService, MainApiPermissionService>();
             services.AddScoped<IPersonCache, PersonCache>();
@@ -36,13 +34,26 @@ namespace Equinor.ProCoSys.Auth
             services.AddScoped<CurrentUserProvider>();
             services.AddScoped<ICurrentUserProvider>(x => x.GetRequiredService<CurrentUserProvider>());
             services.AddScoped<ICurrentUserSetter>(x => x.GetRequiredService<CurrentUserProvider>());
-            services.AddScoped<IBearerTokenSetterForAll, BearerTokenSetterForAll>();
             services.AddScoped<IRestrictionRolesChecker, RestrictionRolesChecker>();
 
             // Singleton - Created the first time they are requested
             services.AddSingleton<ICacheManager, CacheManager>();
 
+            AddMainApiHttpClients(services);
+
             return services;
+        }
+
+        private static void AddMainApiHttpClients(IServiceCollection services)
+        {
+            services.AddTransient<MainApiForUserBearerTokenHandler>();
+            services.AddTransient<MainApiForApplicationBearerTokenHandler>();
+
+            services.AddHttpClient(MainApiClientForUser.ClientName)
+                .AddHttpMessageHandler<MainApiForUserBearerTokenHandler>();
+
+            services.AddHttpClient(MainApiClientForApplication.ClientName)
+                .AddHttpMessageHandler<MainApiForApplicationBearerTokenHandler>();
         }
     }
 }

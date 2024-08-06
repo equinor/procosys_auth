@@ -12,22 +12,15 @@ namespace Equinor.ProCoSys.Auth.Permission
     /// <summary>
     /// Service to get permissions for an user. Permissions are read from Main, using  Main Api
     /// </summary>
-    public class MainApiPermissionService : IPermissionApiService
+    public class MainApiPermissionService(
+        IMainApiClientForApplication mainApiClientForApplication,
+        IMainApiClientForUser mainApiClientForUser,
+        IOptionsMonitor<MainApiOptions> options)
+        : IPermissionApiService
     {
-        private readonly string _apiVersion;
-        private readonly Uri _baseAddress;
-        private readonly string _clientFriendlyName;
-        private readonly IMainApiClient _mainApiClient;
-
-        public MainApiPermissionService(
-            IMainApiClient mainApiClient,
-            IOptionsMonitor<MainApiOptions> options)
-        {
-            _mainApiClient = mainApiClient;
-            _apiVersion = options.CurrentValue.ApiVersion;
-            _baseAddress = new Uri(options.CurrentValue.BaseAddress);
-            _clientFriendlyName = options.CurrentValue.ClientFriendlyName;
-        }
+        private readonly string _apiVersion = options.CurrentValue.ApiVersion;
+        private readonly Uri _baseAddress = new(options.CurrentValue.BaseAddress);
+        private readonly string _clientFriendlyName = options.CurrentValue.ClientFriendlyName;
 
         public async Task<List<AccessablePlant>> GetAllPlantsForUserAsync(Guid azureOid)
         {
@@ -36,7 +29,7 @@ namespace Equinor.ProCoSys.Auth.Permission
                       "&includePlantsWithoutAccess=true" +
                       $"&api-version={_apiVersion}";
 
-            return await _mainApiClient.QueryAndDeserializeAsApplicationAsync<List<AccessablePlant>>(url);
+            return await mainApiClientForApplication.QueryAndDeserializeAsync<List<AccessablePlant>>(url);
         }
 
         public async Task<List<AccessableProject>> GetAllOpenProjectsForCurrentUserAsync(string plantId)
@@ -51,7 +44,7 @@ namespace Equinor.ProCoSys.Auth.Permission
                       "&includeProjectsWithoutAccess=true" +
                       $"&api-version={_apiVersion}";
 
-            return await _mainApiClient.QueryAndDeserializeAsync<List<AccessableProject>>(url) ?? new List<AccessableProject>();
+            return await mainApiClientForUser.QueryAndDeserializeAsync<List<AccessableProject>>(url) ?? [];
         }
 
         public async Task<List<string>> GetPermissionsForCurrentUserAsync(string plantId)
@@ -60,7 +53,7 @@ namespace Equinor.ProCoSys.Auth.Permission
                       $"?plantId={plantId}" +
                       $"&api-version={_apiVersion}";
 
-            return await _mainApiClient.QueryAndDeserializeAsync<List<string>>(url) ?? new List<string>();
+            return await mainApiClientForUser.QueryAndDeserializeAsync<List<string>>(url) ?? [];
         }
 
         public async Task<List<string>> GetRestrictionRolesForCurrentUserAsync(string plantId)
@@ -69,7 +62,7 @@ namespace Equinor.ProCoSys.Auth.Permission
                       $"?plantId={plantId}" +
                       $"&api-version={_apiVersion}";
 
-            return await _mainApiClient.QueryAndDeserializeAsync<List<string>>(url) ?? new List<string>();
+            return await mainApiClientForUser.QueryAndDeserializeAsync<List<string>>(url) ?? [];
         }
 
         private async Task TracePlantAsync(string plant)
@@ -79,7 +72,7 @@ namespace Equinor.ProCoSys.Auth.Permission
                       $"&api-version={_apiVersion}";
 
             var json = JsonSerializer.Serialize(_clientFriendlyName);
-            await _mainApiClient.PostAsync(url, new StringContent(json, Encoding.Default, "application/json"));
+            await mainApiClientForUser.PostAsync(url, new StringContent(json, Encoding.Default, "application/json"));
         }
     }
 }
