@@ -1,5 +1,4 @@
 ﻿using System.Net.Http;
-using Equinor.ProCoSys.Auth.Authentication;
 using Microsoft.Extensions.Logging;
 
 namespace Equinor.ProCoSys.Auth.Client
@@ -8,11 +7,12 @@ namespace Equinor.ProCoSys.Auth.Client
     /// Implementation of the abstract BearerTokenApiClient to access Main Api.
     /// The implementation of IMainApiAuthenticator refer to the correct scope for Main Api
     /// </summary>
-    public class MainApiClient : BearerTokenApiClient, IMainApiClient
+    public class MainApiClientForUser : BearerTokenApiClient, IMainApiClientForUser
     {
-        public MainApiClient(IHttpClientFactory httpClientFactory,
-            IMainApiAuthenticator mainApiAuthenticator,
-            ILogger<MainApiClient> logger) : base(httpClientFactory, mainApiAuthenticator, logger)
+        public static string ClientName = "MainApiClientForUser";
+
+        public MainApiClientForUser(IHttpClientFactory httpClientFactory,
+            ILogger<MainApiClientForUser> logger) : base(ClientName, httpClientFactory, logger)
         {
         }
     }

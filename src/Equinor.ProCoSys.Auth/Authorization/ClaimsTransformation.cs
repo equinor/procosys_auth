@@ -8,6 +8,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 
 namespace Equinor.ProCoSys.Auth.Authorization
 {
@@ -35,7 +36,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
         private readonly IPlantProvider _plantProvider;
         private readonly IPermissionCache _permissionCache;
         private readonly ILogger<ClaimsTransformation> _logger;
-        private readonly IAuthenticatorOptions _authenticatorOptions;
+        private readonly IOptionsMonitor<MainApiAuthenticatorOptions> _authenticatorOptions;
 
         public ClaimsTransformation(
             ILocalPersonRepository localPersonRepository,
@@ -43,7 +44,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
             IPlantProvider plantProvider,
             IPermissionCache permissionCache,
             ILogger<ClaimsTransformation> logger,
-            IAuthenticatorOptions authenticatorOptions)
+            IOptionsMonitor<MainApiAuthenticatorOptions> authenticatorOptions)
         {
             _localPersonRepository = localPersonRepository;
             _personCache = personCache;
@@ -92,11 +93,11 @@ namespace Equinor.ProCoSys.Auth.Authorization
             }
 
             await AddRoleForAllPermissionsToIdentityAsync(claimsIdentity, plantId, userOid.Value);
-            if (!_authenticatorOptions.DisableProjectUserDataClaims)
+            if (!_authenticatorOptions.CurrentValue.DisableProjectUserDataClaims)
             {
                 await AddUserDataClaimForAllOpenProjectsToIdentityAsync(claimsIdentity, plantId, userOid.Value);
             }
-            if (!_authenticatorOptions.DisableRestrictionRoleUserDataClaims)
+            if (!_authenticatorOptions.CurrentValue.DisableRestrictionRoleUserDataClaims)
             {
                 await AddUserDataClaimForAllRestrictionRolesToIdentityAsync(claimsIdentity, plantId, userOid.Value);
             }
@@ -120,7 +121,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 return proCoSysPerson;
             }
 
-            return await _personCache.GetAsync(userOid, false, default);
+            return await _personCache.GetAsync(userOid);
         }
 
         private ClaimsIdentity GetOrCreateClaimsIdentityForThisIssuer(ClaimsPrincipal principal)

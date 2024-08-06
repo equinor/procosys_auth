@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Equinor.ProCoSys.Auth.Client;
 using Equinor.ProCoSys.Auth.Permission;
@@ -15,168 +15,104 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
     {
         private readonly Guid _azureOid = Guid.NewGuid();
         private readonly string _plant = "PCS$TESTPLANT";
-        private IOptionsMonitor<MainApiOptions> _mainApiOptionsMock;
-        private IMainApiClient _mainApiClientMock;
+        private IMainApiClientForApplication _mainApiClientForApplicationMock;
+        private IMainApiClientForUser _mainApiClientForUserMock;
         private MainApiPermissionService _dut;
+        private readonly MainApiOptions _mainApiOptions = new() { ApiVersion = "4.0", BaseAddress = "http://example.com/api/" };
 
         [TestInitialize]
         public void Setup()
         {
-            _mainApiOptionsMock = Substitute.For<IOptionsMonitor<MainApiOptions>>();
-            _mainApiOptionsMock.CurrentValue
-                .Returns(new MainApiOptions { ApiVersion = "4.0", BaseAddress = "http://example.com" });
-            _mainApiClientMock = Substitute.For<IMainApiClient>();
+            var mainApiOptionsMock = Substitute.For<IOptionsMonitor<MainApiOptions>>();
+            mainApiOptionsMock.CurrentValue
+                .Returns(_mainApiOptions);
+            _mainApiClientForApplicationMock = Substitute.For<IMainApiClientForApplication>();
+            _mainApiClientForUserMock = Substitute.For<IMainApiClientForUser>();
 
-            _dut = new MainApiPermissionService(_mainApiClientMock, _mainApiOptionsMock);
+            _dut = new MainApiPermissionService(_mainApiClientForApplicationMock, _mainApiClientForUserMock, mainApiOptionsMock);
         }
 
         [TestMethod]
-        public async Task GetAllPlants_ShouldReturnCorrectNumberOfPlants()
+        public async Task GetAllPlants_ShouldUseClientForApplication()
         {
-            // Arrange
-            _mainApiClientMock.QueryAndDeserializeAsApplicationAsync<List<AccessablePlant>>(Arg.Any<string>())
-                .Returns(new List<AccessablePlant>
-                {
-                    new() { Id = "PCS$ASGARD", Title = "Åsgard" },
-                    new() { Id = "PCS$ASGARD_A", Title = "ÅsgardA" },
-                    new() { Id = "PCS$ASGARD_B", Title = "ÅsgardB" },
-                });
-
             // Act
-            var result = await _dut.GetAllPlantsForUserAsync(_azureOid);
+            await _dut.GetAllPlantsForUserAsync(_azureOid);
 
             // Assert
-            Assert.AreEqual(3, result.Count);
+            var url = $"{_mainApiOptions.BaseAddress}Plants/ForUser" +
+                      $"?azureOid={_azureOid:D}" +
+                      "&includePlantsWithoutAccess=true" +
+                      $"&api-version={_mainApiOptions.ApiVersion}";
+            await _mainApiClientForApplicationMock.Received(1)
+                .QueryAndDeserializeAsync<List<AccessablePlant>>(Arg.Any<string>());
+            await _mainApiClientForUserMock.Received(0)
+                .QueryAndDeserializeAsync<List<AccessablePlant>>(Arg.Any<string>());
         }
 
         [TestMethod]
-        public async Task GetAllPlants_ShouldSetsCorrectProperties()
-        {
-            // Arrange
-            var proCoSysPlant = new AccessablePlant { Id = "PCS$ASGARD_B", Title = "ÅsgardB" };
-            _mainApiClientMock.QueryAndDeserializeAsApplicationAsync<List<AccessablePlant>>(Arg.Any<string>())
-                .Returns(new List<AccessablePlant> { proCoSysPlant });
-            // Act
-            var result = await _dut.GetAllPlantsForUserAsync(_azureOid);
-
-            // Assert
-            var plant = result.Single();
-            Assert.AreEqual(proCoSysPlant.Id, plant.Id);
-            Assert.AreEqual(proCoSysPlant.Title, plant.Title);
-        }
-
-        [TestMethod]
-        public async Task GetPermissions_ShouldReturnThreePermissions_OnValidPlant()
-        {
-            // Arrange
-            _mainApiClientMock.QueryAndDeserializeAsync<List<string>>(Arg.Any<string>())
-                .Returns(new List<string> { "A", "B", "C" });
-
-            // Act
-            var result = await _dut.GetPermissionsForCurrentUserAsync(_plant);
-
-            // Assert
-            Assert.AreEqual(3, result.Count);
-        }
-
-        [TestMethod]
-        public async Task GetPermissions_ShouldReturnNoPermissions_OnValidPlant()
-        {
-            // Arrange
-            _mainApiClientMock.QueryAndDeserializeAsync<List<string>>(Arg.Any<string>())
-                .Returns(new List<string>());
-
-            // Act
-            var result = await _dut.GetPermissionsForCurrentUserAsync(_plant);
-
-            // Assert
-            Assert.AreEqual(0, result.Count);
-        }
-
-        [TestMethod]
-        public async Task GetPermissions_ShouldReturnNoPermissions_OnInvalidPlant()
+        public async Task GetPermissions_ShouldUseClientForUser()
         {
             // Act
-            var result = await _dut.GetPermissionsForCurrentUserAsync("INVALIDPLANT");
+            await _dut.GetPermissionsForCurrentUserAsync(_plant);
 
             // Assert
-            Assert.AreEqual(0, result.Count);
+            var url = $"{_mainApiOptions.BaseAddress}Permissions" +
+                      $"?plantId={_plant}" +
+                      $"&api-version={_mainApiOptions.ApiVersion}";
+            await _mainApiClientForApplicationMock.Received(0)
+                .QueryAndDeserializeAsync<List<string>>(Arg.Any<string>());
+            await _mainApiClientForUserMock.Received(1)
+                .QueryAndDeserializeAsync<List<string>>(Arg.Any<string>());
         }
  
         [TestMethod]
-        public async Task GetAllOpenProjectsAsync_ShouldReturnTwoProjects_OnValidPlant()
+        public async Task GetAllOpenProjectsAsync_ShouldUseClientForUser()
         {
-            // Arrange
-            _mainApiClientMock.QueryAndDeserializeAsync<List<AccessableProject>>(Arg.Any<string>())
-                .Returns(new List<AccessableProject> { new(), new() });
-
             // Act
-            var result = await _dut.GetAllOpenProjectsForCurrentUserAsync(_plant);
+            await _dut.GetAllOpenProjectsForCurrentUserAsync(_plant);
 
             // Assert
-            Assert.AreEqual(2, result.Count);
+            var url = $"{_mainApiOptions.BaseAddress}Projects" +
+                      $"?plantId={_plant}" +
+                      "&withCommPkgsOnly=false" +
+                      "&includeProjectsWithoutAccess=true" +
+                      $"&api-version={_mainApiOptions.ApiVersion}";
+            await _mainApiClientForApplicationMock.Received(0)
+                .QueryAndDeserializeAsync<List<AccessableProject>>(Arg.Any<string>());
+            await _mainApiClientForUserMock.Received(1)
+                .QueryAndDeserializeAsync<List<AccessableProject>>(Arg.Any<string>());
         }
 
         [TestMethod]
-        public async Task GetAllOpenProjectsAsync_ShouldReturnNoProjects_OnValidPlant()
+        public async Task GetAllOpenProjectsAsync_ShouldTracePlantForUser()
         {
-            // Arrange
-            _mainApiClientMock.QueryAndDeserializeAsync<List<AccessableProject>>(Arg.Any<string>())
-                .Returns(new List<AccessableProject>());
-
             // Act
-            var result = await _dut.GetAllOpenProjectsForCurrentUserAsync(_plant);
+            await _dut.GetAllOpenProjectsForCurrentUserAsync(_plant);
 
             // Assert
-            Assert.AreEqual(0, result.Count);
+            var url = $"{_mainApiOptions.BaseAddress}Me/TracePlant" +
+                      $"?plantId={_plant}" +
+                      $"&api-version={_mainApiOptions.ApiVersion}";
+            await _mainApiClientForApplicationMock.Received(0)
+                .PostAsync(Arg.Any<string>(), Arg.Any<HttpContent>());
+            await _mainApiClientForUserMock.Received(1)
+                .PostAsync(url, Arg.Any<HttpContent>());
         }
 
         [TestMethod]
-        public async Task GetAllOpenProjectsAsync_ShouldReturnNoProjects_OnInvalidPlant()
+        public async Task GetRestrictionRolesAsync_ShouldUseClientForUser()
         {
             // Act
-            var result = await _dut.GetAllOpenProjectsForCurrentUserAsync("INVALIDPLANT");
+            await _dut.GetRestrictionRolesForCurrentUserAsync(_plant);
 
             // Assert
-            Assert.AreEqual(0, result.Count);
-        }
-
-        [TestMethod]
-        public async Task GetRestrictionRolesAsync_ShouldReturnThreePermissions_OnValidPlant()
-        {
-            // Arrange
-            _mainApiClientMock.QueryAndDeserializeAsync<List<string>>(Arg.Any<string>())
-                .Returns(new List<string> { "A", "B", "C" });
-
-            // Act
-            var result = await _dut.GetRestrictionRolesForCurrentUserAsync(_plant);
-
-            // Assert
-            Assert.AreEqual(3, result.Count);
-        }
-
-        [TestMethod]
-        public async Task GetRestrictionRolesAsync_ShouldReturnNoPermissions_OnValidPlant()
-        {
-            // Arrange
-            _mainApiClientMock.QueryAndDeserializeAsync<List<string>>(Arg.Any<string>())
-                .Returns(new List<string>());
-
-            // Act
-            var result = await _dut.GetRestrictionRolesForCurrentUserAsync(_plant);
-
-            // Assert
-            Assert.AreEqual(0, result.Count);
-        }
-
-        [TestMethod]
-        public async Task GetRestrictionRolesAsync_ShouldReturnNoPermissions_OnInValidPlant()
-        {
-            // Act
-            var result = await _dut.GetRestrictionRolesForCurrentUserAsync("INVALIDPLANT");
-
-            // Assert
-            Assert.AreEqual(0, result.Count);
+            var url = $"{_mainApiOptions.BaseAddress}ContentRestrictions" +
+                      $"?plantId={_plant}" +
+                      $"&api-version={_mainApiOptions.ApiVersion}";
+            await _mainApiClientForApplicationMock.Received(0)
+                .QueryAndDeserializeAsync<List<string>>(Arg.Any<string>());
+            await _mainApiClientForUserMock.Received(1)
+                .QueryAndDeserializeAsync<List<string>>(Arg.Any<string>());
         }
     }
 }

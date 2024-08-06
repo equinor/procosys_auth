@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Net;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Equinor.ProCoSys.Auth.Authentication;
 using Equinor.ProCoSys.Auth.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,23 +11,15 @@ using NSubstitute;
 namespace Equinor.ProCoSys.Auth.Tests.Client
 {
     [TestClass]
-    public class MainApiClientTests
+    public class BearerTokenApiClientTests
     {
-        private IMainApiAuthenticator _bearerTokenProviderMock;
-        private ILogger<MainApiClient> _loggerMock;
-
-        [TestInitialize]
-        public void Setup()
-        {
-            _bearerTokenProviderMock = Substitute.For<IMainApiAuthenticator>();
-            _loggerMock = Substitute.For<ILogger<MainApiClient>>();
-        }
+        private readonly ILogger<BearerTokenApiClient> _loggerMock = Substitute.For<ILogger<BearerTokenApiClient>>();
 
         [TestMethod]
         public async Task QueryAndDeserialize_ShouldReturnDeserialized_Object_TestAsync()
         {
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "{\"Id\": 123}");
-            var dut = new MainApiClient(httpClientFactory, _bearerTokenProviderMock, _loggerMock);
+            var dut = new TestableClient("MyClient", httpClientFactory, _loggerMock);
 
             var response = await dut.QueryAndDeserializeAsync<DummyClass>("url");
 
@@ -39,7 +31,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
         public async Task QueryAndDeserialize_ThrowsException_WhenRequestIsNotSuccessful_TestAsync()
         {
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.BadGateway, "");
-            var dut = new MainApiClient(httpClientFactory, _bearerTokenProviderMock, _loggerMock);
+            var dut = new TestableClient("MyClient", httpClientFactory, _loggerMock);
 
             await Assert.ThrowsExceptionAsync<Exception>(async () => await dut.QueryAndDeserializeAsync<DummyClass>("url"));
         }
@@ -48,7 +40,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
         public async Task QueryAndDeserialize_ThrowsException_WhenInvalidResponseIsReceived_TestAsync()
         {
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "");
-            var dut = new MainApiClient(httpClientFactory, _bearerTokenProviderMock, _loggerMock);
+            var dut = new TestableClient("MyClient", httpClientFactory, _loggerMock);
 
             await Assert.ThrowsExceptionAsync<JsonException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>("url"));
         }
@@ -57,7 +49,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
         public async Task QueryAndDeserialize_ThrowsException_WhenNoUrl()
         {
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "");
-            var dut = new MainApiClient(httpClientFactory, _bearerTokenProviderMock, _loggerMock);
+            var dut = new TestableClient("MyClient", httpClientFactory, _loggerMock);
 
             await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>(null));
         }
@@ -66,10 +58,16 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
         public async Task QueryAndDeserialize_ThrowsException_WhenUrlTooLong()
         {
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "");
-            var dut = new MainApiClient(httpClientFactory, _bearerTokenProviderMock, _loggerMock);
+            var dut = new TestableClient("MyClient", httpClientFactory, _loggerMock);
 
             await Assert.ThrowsExceptionAsync<ArgumentException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>(new string('u', 2001)));
         }
+
+        private class TestableClient(
+            string clientName,
+            IHttpClientFactory httpClientFactory,
+            ILogger<BearerTokenApiClient> logger)
+            : BearerTokenApiClient(clientName, httpClientFactory, logger);
 
         private class DummyClass
         {
