@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Equinor.ProCoSys.Auth.Client;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "{\"Id\": 123}");
             var dut = new TestableClient("MyClient", httpClientFactory, _loggerMock);
 
-            var response = await dut.QueryAndDeserializeAsync<DummyClass>("url");
+            var response = await dut.QueryAndDeserializeAsync<DummyClass>("url", CancellationToken.None);
 
             Assert.IsNotNull(response);
             Assert.AreEqual(123, response.Id);
@@ -33,7 +34,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.BadGateway, "");
             var dut = new TestableClient("MyClient", httpClientFactory, _loggerMock);
 
-            await Assert.ThrowsExceptionAsync<Exception>(async () => await dut.QueryAndDeserializeAsync<DummyClass>("url"));
+            await Assert.ThrowsExceptionAsync<Exception>(async () => await dut.QueryAndDeserializeAsync<DummyClass>("url", CancellationToken.None));
         }
 
         [TestMethod]
@@ -42,7 +43,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "");
             var dut = new TestableClient("MyClient", httpClientFactory, _loggerMock);
 
-            await Assert.ThrowsExceptionAsync<JsonException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>("url"));
+            await Assert.ThrowsExceptionAsync<JsonException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>("url", CancellationToken.None));
         }
 
         [TestMethod]
@@ -51,7 +52,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "");
             var dut = new TestableClient("MyClient", httpClientFactory, _loggerMock);
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>(null));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>(null, CancellationToken.None));
         }
 
         [TestMethod]
@@ -60,7 +61,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Client
             var httpClientFactory = HttpHelper.GetHttpClientFactory(HttpStatusCode.OK, "");
             var dut = new TestableClient("MyClient", httpClientFactory, _loggerMock);
 
-            await Assert.ThrowsExceptionAsync<ArgumentException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>(new string('u', 2001)));
+            await Assert.ThrowsExceptionAsync<ArgumentException>(async () => await dut.QueryAndDeserializeAsync<DummyClass>(new string('u', 2001), CancellationToken.None));
         }
 
         private class TestableClient(

@@ -1,15 +1,16 @@
-﻿using System;
-using System.Collections;
-using System.Threading;
-using System.Threading.Tasks;
-using Equinor.ProCoSys.Auth.Caches;
+﻿using Equinor.ProCoSys.Auth.Caches;
 using Equinor.ProCoSys.Auth.Person;
 using Equinor.ProCoSys.Common.Caches;
-using Equinor.ProCoSys.Common.Tests;
-using Equinor.ProCoSys.Common.Time;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Equinor.ProCoSys.Auth.Tests.Caches
 {
@@ -41,11 +42,9 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
         [TestInitialize]
         public void Setup()
         {
-            TimeService.SetProvider(new ManualTimeProvider(new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
-
             _personApiServiceMock = Substitute.For<IPersonApiService>();
             _person = new ProCoSysPerson { FirstName = "Erling", LastName = "Braut Haaland"};
-            _personApiServiceMock.TryGetPersonByOidAsync(_currentUserOid, false).Returns(_person);
+            _personApiServiceMock.TryGetPersonByOidAsync(_currentUserOid, true, CancellationToken.None).Returns(_person);
 
             _personApiServiceMock.GetAllPersonsAsync(TestPlant, CancellationToken.None).Returns([
                 _person1,
@@ -56,8 +55,9 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
             optionsMock.CurrentValue
                 .Returns(new CacheOptions());
 
+            OptionsWrapper<MemoryDistributedCacheOptions> _options = new(new MemoryDistributedCacheOptions());
             _dut = new PersonCache(
-                new CacheManager(),
+                new DistributedCacheManager(new MemoryDistributedCache(_options)),
                 _personApiServiceMock,
                 optionsMock);
         }
@@ -66,25 +66,25 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
         public async Task GetAsync_ShouldReturnPersonFromPersonApiServiceFirstTime()
         {
             // Act
-            var result = await _dut.GetAsync(_currentUserOid, false, default);
+            var result = await _dut.GetAsync(_currentUserOid, CancellationToken.None, true);
 
             // Assert
-            AssertPerson(result);
-            await _personApiServiceMock.Received(1).TryGetPersonByOidAsync(_currentUserOid, false);
+            AssertPerson(_person, result);
+            await _personApiServiceMock.Received(1).TryGetPersonByOidAsync(_currentUserOid, true, CancellationToken.None);
         }
 
         [TestMethod]
         public async Task GetAsync_ShouldReturnPersonsFromCacheSecondTime()
         {
-            await _dut.GetAsync(_currentUserOid, false, default);
+            await _dut.GetAsync(_currentUserOid, CancellationToken.None, true);
 
             // Act
-            var result = await _dut.GetAsync(_currentUserOid, false, default);
+            var result = await _dut.GetAsync(_currentUserOid, CancellationToken.None, true);
 
             // Assert
-            AssertPerson(result);
+            AssertPerson(_person, result);
             // since GetAsync has been called twice, but TryGetPersonByOidAsync has been called once, the second Get uses cache
-            await _personApiServiceMock.Received(1).TryGetPersonByOidAsync(_currentUserOid, false);
+            await _personApiServiceMock.Received(1).TryGetPersonByOidAsync(_currentUserOid, true, CancellationToken.None);
         }
 
         [TestMethod]
@@ -104,7 +104,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
             await _dut.GetAllPersonsAsync(TestPlant, CancellationToken.None);
 
             // Act
-            var result = await _dut.GetAllPersonsAsync(TestPlant, CancellationToken.None);
+            List<ProCoSysPerson> result = await _dut.GetAllPersonsAsync(TestPlant, CancellationToken.None);
 
             // Assert
             AssertAllPersons(result);
@@ -113,17 +113,17 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
             await _personApiServiceMock.Received(1).GetAllPersonsAsync(TestPlant, CancellationToken.None);
         }
 
-        private void AssertPerson(ProCoSysPerson person)
+        private void AssertPerson(ProCoSysPerson exptected, ProCoSysPerson actual)
         {
-            Assert.AreEqual(_person.FirstName, person.FirstName);
-            Assert.AreEqual(_person.LastName, person.LastName);
+            Assert.AreEqual(exptected.FirstName, actual.FirstName);
+            Assert.AreEqual(exptected.LastName, actual.LastName);
         }
 
-        private void AssertAllPersons(ICollection list)
+        private void AssertAllPersons(IList<ProCoSysPerson> list)
         {
             Assert.IsTrue(list.Count == 2);
-            CollectionAssert.Contains(list, _person1);
-            CollectionAssert.Contains(list, _person2);
+            AssertPerson(list.First(), _person1);
+            AssertPerson(list.Last(), _person2);
         }
     }
 }

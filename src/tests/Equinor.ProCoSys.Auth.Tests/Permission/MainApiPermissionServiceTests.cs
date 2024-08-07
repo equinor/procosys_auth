@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Equinor.ProCoSys.Auth.Client;
 using Equinor.ProCoSys.Auth.Permission;
@@ -36,7 +37,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
         public async Task GetAllPlants_ShouldUseClientForApplication()
         {
             // Act
-            await _dut.GetAllPlantsForUserAsync(_azureOid);
+            await _dut.GetAllPlantsForUserAsync(_azureOid, CancellationToken.None);
 
             // Assert
             var url = $"{_mainApiOptions.BaseAddress}Plants/ForUser" +
@@ -44,32 +45,32 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
                       "&includePlantsWithoutAccess=true" +
                       $"&api-version={_mainApiOptions.ApiVersion}";
             await _mainApiClientForApplicationMock.Received(1)
-                .QueryAndDeserializeAsync<List<AccessablePlant>>(Arg.Any<string>());
+                .QueryAndDeserializeAsync<List<AccessablePlant>>(url, CancellationToken.None);
             await _mainApiClientForUserMock.Received(0)
-                .QueryAndDeserializeAsync<List<AccessablePlant>>(Arg.Any<string>());
+                .QueryAndDeserializeAsync<List<AccessablePlant>>(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
 
         [TestMethod]
         public async Task GetPermissions_ShouldUseClientForUser()
         {
             // Act
-            await _dut.GetPermissionsForCurrentUserAsync(_plant);
+            await _dut.GetPermissionsForCurrentUserAsync(_plant, CancellationToken.None);
 
             // Assert
             var url = $"{_mainApiOptions.BaseAddress}Permissions" +
                       $"?plantId={_plant}" +
                       $"&api-version={_mainApiOptions.ApiVersion}";
             await _mainApiClientForApplicationMock.Received(0)
-                .QueryAndDeserializeAsync<List<string>>(Arg.Any<string>());
+                .QueryAndDeserializeAsync<List<string>>(Arg.Any<string>(), Arg.Any<CancellationToken>());
             await _mainApiClientForUserMock.Received(1)
-                .QueryAndDeserializeAsync<List<string>>(Arg.Any<string>());
+                .QueryAndDeserializeAsync<List<string>>(url, CancellationToken.None);
         }
  
         [TestMethod]
         public async Task GetAllOpenProjectsAsync_ShouldUseClientForUser()
         {
             // Act
-            await _dut.GetAllOpenProjectsForCurrentUserAsync(_plant);
+            await _dut.GetAllOpenProjectsForCurrentUserAsync(_plant, CancellationToken.None);
 
             // Assert
             var url = $"{_mainApiOptions.BaseAddress}Projects" +
@@ -78,41 +79,41 @@ namespace Equinor.ProCoSys.Auth.Tests.Permission
                       "&includeProjectsWithoutAccess=true" +
                       $"&api-version={_mainApiOptions.ApiVersion}";
             await _mainApiClientForApplicationMock.Received(0)
-                .QueryAndDeserializeAsync<List<AccessableProject>>(Arg.Any<string>());
+                .QueryAndDeserializeAsync<List<AccessableProject>>(Arg.Any<string>(), Arg.Any<CancellationToken>());
             await _mainApiClientForUserMock.Received(1)
-                .QueryAndDeserializeAsync<List<AccessableProject>>(Arg.Any<string>());
+                .QueryAndDeserializeAsync<List<AccessableProject>>(url, CancellationToken.None);
         }
 
         [TestMethod]
         public async Task GetAllOpenProjectsAsync_ShouldTracePlantForUser()
         {
             // Act
-            await _dut.GetAllOpenProjectsForCurrentUserAsync(_plant);
+            await _dut.GetAllOpenProjectsForCurrentUserAsync(_plant, CancellationToken.None);
 
             // Assert
             var url = $"{_mainApiOptions.BaseAddress}Me/TracePlant" +
                       $"?plantId={_plant}" +
                       $"&api-version={_mainApiOptions.ApiVersion}";
             await _mainApiClientForApplicationMock.Received(0)
-                .PostAsync(Arg.Any<string>(), Arg.Any<HttpContent>());
+                .PostAsync(Arg.Any<string>(), Arg.Any<HttpContent>(), Arg.Any<CancellationToken>());
             await _mainApiClientForUserMock.Received(1)
-                .PostAsync(url, Arg.Any<HttpContent>());
+                .PostAsync(url, Arg.Any<HttpContent>(), CancellationToken.None);
         }
 
         [TestMethod]
         public async Task GetRestrictionRolesAsync_ShouldUseClientForUser()
         {
             // Act
-            await _dut.GetRestrictionRolesForCurrentUserAsync(_plant);
+            await _dut.GetRestrictionRolesForCurrentUserAsync(_plant, CancellationToken.None);
 
             // Assert
             var url = $"{_mainApiOptions.BaseAddress}ContentRestrictions" +
                       $"?plantId={_plant}" +
                       $"&api-version={_mainApiOptions.ApiVersion}";
             await _mainApiClientForApplicationMock.Received(0)
-                .QueryAndDeserializeAsync<List<string>>(Arg.Any<string>());
+                .QueryAndDeserializeAsync<List<string>>(Arg.Any<string>(), Arg.Any<CancellationToken>());
             await _mainApiClientForUserMock.Received(1)
-                .QueryAndDeserializeAsync<List<string>>(Arg.Any<string>());
+                .QueryAndDeserializeAsync<List<string>>(url, CancellationToken.None);
         }
     }
 }
