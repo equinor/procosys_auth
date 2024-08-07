@@ -18,13 +18,13 @@ namespace Equinor.ProCoSys.Auth.Client
         IHttpClientFactory httpClientFactory,
         ILogger<BearerTokenApiClient> logger)
     {
-        public async Task<T> TryQueryAndDeserializeAsync<T>(string url, List<KeyValuePair<string, string>> extraHeaders = null, CancellationToken cancellationToken = default)
+        public async Task<T> TryQueryAndDeserializeAsync<T>(string url, CancellationToken cancellationToken, List<KeyValuePair<string, string>> extraHeaders = null)
             => await QueryAndDeserializeAsync<T>(url, true, extraHeaders, cancellationToken);
 
-        public async Task<T> QueryAndDeserializeAsync<T>(string url, List<KeyValuePair<string, string>> extraHeaders = null, CancellationToken cancellationToken = default)
+        public async Task<T> QueryAndDeserializeAsync<T>(string url, CancellationToken cancellationToken, List<KeyValuePair<string, string>> extraHeaders = null)
             => await QueryAndDeserializeAsync<T>(url, false, extraHeaders, cancellationToken);
 
-        public async Task PutAsync(string url, HttpContent content, CancellationToken cancellationToken = default)
+        public async Task PutAsync(string url, HttpContent content, CancellationToken cancellationToken)
         {
             var httpClient = CreateHttpClient();
 
@@ -39,7 +39,7 @@ namespace Equinor.ProCoSys.Auth.Client
             }
         }
 
-        public async Task PostAsync(string url, HttpContent content, CancellationToken cancellationToken = default)
+        public async Task PostAsync(string url, HttpContent content, CancellationToken cancellationToken)
         {
             var httpClient = CreateHttpClient();
 
@@ -57,8 +57,8 @@ namespace Equinor.ProCoSys.Auth.Client
         private async Task<T> QueryAndDeserializeAsync<T>(
             string url,
             bool tryGet,
-            List<KeyValuePair<string, string>> extraHeaders = null,
-            CancellationToken cancellationToken = default)
+            List<KeyValuePair<string, string>> extraHeaders,
+            CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(url))
             {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Equinor.ProCoSys.Auth.Person;
 
@@ -9,7 +10,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
     // For solutions without local Person repo, the implemented method should just return false
     public interface ILocalPersonRepository
     {
-        Task<bool> ExistsAsync(Guid userOid);
-        Task<ProCoSysPerson> GetAsync(Guid userOid);
+        Task<bool> ExistsAsync(Guid userOid, CancellationToken cancellationToken);
+        Task<ProCoSysPerson> GetAsync(Guid userOid, CancellationToken cancellationToken);
     }
 }
