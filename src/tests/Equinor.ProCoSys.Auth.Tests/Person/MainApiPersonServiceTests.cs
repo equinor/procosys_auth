@@ -34,11 +34,11 @@ namespace Equinor.ProCoSys.Auth.Tests.Person
         {
             // Arrange
             var person = new ProCoSysPerson { FirstName = "Lars", LastName = "Monsen" };
-            _mainApiClientMock.TryQueryAndDeserializeAsync<ProCoSysPerson>(Arg.Any<string>())
+            _mainApiClientMock.TryQueryAndDeserializeAsync<ProCoSysPerson>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(person);
 
             // Act
-            var result = await _dut.TryGetPersonByOidAsync(_azureOid, false);
+            var result = await _dut.TryGetPersonByOidAsync(_azureOid, false, CancellationToken.None);
 
             // Assert
             Assert.IsNotNull(result);
@@ -70,7 +70,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Person
             };
 
             // Arrange
-            _mainApiClientMock.TryQueryAndDeserializeAsync<List<ProCoSysPerson>>(url)
+            _mainApiClientMock.TryQueryAndDeserializeAsync<List<ProCoSysPerson>>(url, Arg.Any<CancellationToken>())
                 .Returns([
                     person1,
                     person2

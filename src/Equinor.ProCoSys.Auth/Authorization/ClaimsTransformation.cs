@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 
@@ -88,7 +89,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 return principal;
             }
 
-            if (!await _permissionCache.HasUserAccessToPlantAsync(plantId, userOid.Value))
+            if (!await _permissionCache.HasUserAccessToPlantAsync(plantId, userOid.Value, CancellationToken.None))
             {
                 _logger.LogInformation("----- {Name} early exit, not a valid plant for user", GetType().Name);
                 return principal;
@@ -122,14 +123,14 @@ namespace Equinor.ProCoSys.Auth.Authorization
         {
             // check if user exists in local repository before checking
             // cache which get user from ProCoSys
-            var proCoSysPerson = await _localPersonRepository.GetAsync(userOid);
+            var proCoSysPerson = await _localPersonRepository.GetAsync(userOid, CancellationToken.None);
             if (proCoSysPerson is not null)
             {
                 AddPersonExistsClaim(claimsIdentity, proCoSysPerson.AzureOid);
                 return proCoSysPerson;
             }
 
-            return await _personCache.GetAsync(userOid);
+            return await _personCache.GetAsync(userOid, CancellationToken.None);
         }
 
         private ClaimsIdentity GetOrCreateClaimsIdentityForThisIssuer(ClaimsPrincipal principal)
@@ -161,14 +162,14 @@ namespace Equinor.ProCoSys.Auth.Authorization
 
         private async Task AddRoleForAllPermissionsToIdentityAsync(ClaimsIdentity claimsIdentity, string plantId, Guid userOid)
         {
-            var permissions = await _permissionCache.GetPermissionsForUserAsync(plantId, userOid);
+            var permissions = await _permissionCache.GetPermissionsForUserAsync(plantId, userOid, CancellationToken.None);
             permissions?.ToList().ForEach(
                 permission => claimsIdentity.AddClaim(CreateClaim(ClaimTypes.Role, permission)));
         }
 
         private async Task AddUserDataClaimForAllOpenProjectsToIdentityAsync(ClaimsIdentity claimsIdentity, string plantId, Guid userOid)
         {
-            var projects = await _permissionCache.GetProjectsForUserAsync(plantId, userOid);
+            var projects = await _permissionCache.GetProjectsForUserAsync(plantId, userOid, CancellationToken.None);
             projects?.ToList().ForEach(project =>
             {
                 claimsIdentity.AddClaim(CreateClaim(ClaimTypes.UserData, GetProjectClaimValue(project.Name)));
@@ -178,7 +179,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
 
         private async Task AddUserDataClaimForAllRestrictionRolesToIdentityAsync(ClaimsIdentity claimsIdentity, string plantId, Guid userOid)
         {
-            var restrictions = await _permissionCache.GetRestrictionRolesForUserAsync(plantId, userOid);
+            var restrictions = await _permissionCache.GetRestrictionRolesForUserAsync(plantId, userOid, CancellationToken.None);
             restrictions?.ToList().ForEach(
                 r => claimsIdentity.AddClaim(CreateClaim(ClaimTypes.UserData, GetRestrictionRoleClaimValue(r))));
         }

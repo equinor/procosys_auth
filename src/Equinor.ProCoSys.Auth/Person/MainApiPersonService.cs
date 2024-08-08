@@ -21,7 +21,7 @@ namespace Equinor.ProCoSys.Auth.Person
         public async Task<ProCoSysPerson> TryGetPersonByOidAsync(
             Guid azureOid, 
             bool includeVoidedPerson, 
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var url = $"{_baseAddress}Person" +
                       $"?azureOid={azureOid:D}" +
@@ -30,15 +30,15 @@ namespace Equinor.ProCoSys.Auth.Person
 
             // Execute as application. The Person endpoint in Main Api requires
             // a special role "User.Read.All", which the Azure application registration has
-            return await mainApiClientForApplication.TryQueryAndDeserializeAsync<ProCoSysPerson>(url, null, cancellationToken);
+            return await mainApiClientForApplication.TryQueryAndDeserializeAsync<ProCoSysPerson>(url, cancellationToken);
         }
 
-        public async Task<List<ProCoSysPerson>> GetAllPersonsAsync(string plant, CancellationToken cancellationToken = default)
+        public async Task<List<ProCoSysPerson>> GetAllPersonsAsync(string plant, CancellationToken cancellationToken)
         {
             var url = $"{_baseAddress}Person/AllPersons" +
                       $"?plantId={plant}" +
                       $"&api-version={_apiVersion}";
-            return await mainApiClientForApplication.TryQueryAndDeserializeAsync<List<ProCoSysPerson>>(url, null, cancellationToken);
+            return await mainApiClientForApplication.TryQueryAndDeserializeAsync<List<ProCoSysPerson>>(url, cancellationToken);
         }
     }
 }
