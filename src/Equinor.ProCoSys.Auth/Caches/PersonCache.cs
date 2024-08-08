@@ -31,7 +31,7 @@ namespace Equinor.ProCoSys.Auth.Caches
         public async Task<ProCoSysPerson> GetAsync(Guid userOid, CancellationToken cancellationToken, bool includeVoidedPerson = false)
             => await _cacheManager.GetOrCreateAsync(
                 PersonsCacheKey(userOid),
-                () => _personApiService.TryGetPersonByOidAsync(userOid, includeVoidedPerson, cancellationToken),
+                token => _personApiService.TryGetPersonByOidAsync(userOid, includeVoidedPerson, token),
                 CacheDuration.Minutes,
                 _options.CurrentValue.PersonCacheMinutes, 
                 cancellationToken);
@@ -39,7 +39,7 @@ namespace Equinor.ProCoSys.Auth.Caches
         public async Task<List<ProCoSysPerson>> GetAllPersonsAsync(string plant, CancellationToken cancellationToken)
             => await _cacheManager.GetOrCreateAsync(
                 PersonsCacheKey(plant),
-                () => _personApiService.GetAllPersonsAsync(plant, cancellationToken),
+                token => _personApiService.GetAllPersonsAsync(plant, token),
                 CacheDuration.Minutes,
                 _options.CurrentValue.PersonCacheMinutes,
                 cancellationToken);

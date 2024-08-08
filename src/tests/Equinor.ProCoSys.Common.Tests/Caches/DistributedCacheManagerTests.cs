@@ -1,8 +1,12 @@
 ﻿using Equinor.ProCoSys.Common.Caches;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NSubstitute;
+using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,14 +21,14 @@ namespace Equinor.ProCoSys.Common.Tests.Caches
         public void Setup()
         {
             OptionsWrapper<MemoryDistributedCacheOptions> _options = new(new MemoryDistributedCacheOptions());
-            _dut = new DistributedCacheManager(new MemoryDistributedCache(_options));
+            _dut = new DistributedCacheManager(new MemoryDistributedCache(_options), Substitute.For<ILogger<DistributedCacheManager>>());
         }
 
         [TestMethod]
         public async Task GetOrCreateAsync_ShouldReturnCachedValue_OnFirstCall()
         {
             // Act
-            var result = await _dut.GetOrCreateAsync("KeyA", () => CreateTestableObject("V1", "V2"), CacheDuration.Minutes, 2, CancellationToken.None);
+            var result = await _dut.GetOrCreateAsync("KeyA", token => CreateTestableObject("V1", "V2", token), CacheDuration.Minutes, 2, CancellationToken.None);
 
             // Assert
             AssertObject("V1", "V2", result);
@@ -34,26 +38,69 @@ namespace Equinor.ProCoSys.Common.Tests.Caches
         public async Task GetOrCreateAsync_ShouldReturnFirstCachedValue_OnSecondCall()
         {
             // Arrange
-            await _dut.GetOrCreateAsync("KeyA", () => CreateTestableObject("V1", "V2"), CacheDuration.Minutes, 2, CancellationToken.None);
+            await _dut.GetOrCreateAsync("KeyA", token => CreateTestableObject("V1", "V2", token), CacheDuration.Minutes, 2, CancellationToken.None);
 
             // Act
-            var result = await _dut.GetOrCreateAsync("KeyA", () => CreateTestableObject("KeyA", "Y"), CacheDuration.Minutes, 2, CancellationToken.None);
+            var result = await _dut.GetOrCreateAsync("KeyA", token => CreateTestableObject("X", "Y", token), CacheDuration.Minutes, 2, CancellationToken.None);
 
             // Assert
             AssertObject("V1", "V2", result);
         }
 
         [TestMethod]
-        public async Task GetAsync_ShouldReuseCachedValue()
+        public async Task GetOrCreateAsync_ShouldThrowException_WhenActionThrowException()
+            // Act and Assert
+            => await Assert.ThrowsExceptionAsync<Exception>(() 
+                => _dut.GetOrCreateAsync("KeyA", token => ThrowTestableException("V1", "V2", token), CacheDuration.Minutes, 2, CancellationToken.None));
+
+        [TestMethod]
+        public async Task GetOrCreateAsync_ShouldReturnCachedValue_OnSecondCallAfterException()
         {
             // Arrange
-            await _dut.GetOrCreateAsync("KeyA", () => CreateTestableObject("V1", "V2"), CacheDuration.Minutes, 2, CancellationToken.None);
+            await Assert.ThrowsExceptionAsync<Exception>(()
+                => _dut.GetOrCreateAsync("KeyA", token => ThrowTestableException("V1", "V2", token), CacheDuration.Minutes, 2, CancellationToken.None));
+
+            // Act
+            var result = await _dut.GetOrCreateAsync("KeyA", token => CreateTestableObject("X", "Y", token), CacheDuration.Minutes, 2, CancellationToken.None);
+
+            // Assert
+            AssertObject("X", "Y", result);
+        }
+
+        [TestMethod]
+        public async Task GetOrCreateAsync_ShouldNotReturnCachedValue_WhenActionThrowException()
+        {
+            // Act
+            await Assert.ThrowsExceptionAsync<Exception>(()
+                => _dut.GetOrCreateAsync("KeyA", token => ThrowTestableException("V1", "V2", token), CacheDuration.Minutes, 2, CancellationToken.None));
+
+            // Assert
+            var result = await _dut.GetAsync<TestableClass>("KeyA", CancellationToken.None);
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public async Task GetAsync_ShouldGetCachedValue()
+        {
+            // Arrange
+            await _dut.GetOrCreateAsync("KeyA", token => CreateTestableObject("V1", "V2", token), CacheDuration.Minutes, 2, CancellationToken.None);
 
             // Act
             var result = await _dut.GetAsync<TestableClass>("KeyA", CancellationToken.None);
 
             // Assert
             AssertObject("V1", "V2", result);
+        }
+
+        [TestMethod]
+        public async Task GetAsync_ShouldThrowException_WhenGettingIncompatibleObject()
+        {
+            // Arrange
+            await _dut.GetOrCreateAsync("KeyA", token => CreateTestableObject("V1", "V2", token), CacheDuration.Minutes, 2, CancellationToken.None);
+
+            // Act
+            var result = await Assert.ThrowsExceptionAsync<Exception>(() => _dut.GetAsync<string>("KeyA", CancellationToken.None));
+            Assert.AreEqual($"Failed to deserialize cached value for key KeyA as {typeof(string)}", result.Message);
         }
 
         [TestMethod]
@@ -70,7 +117,7 @@ namespace Equinor.ProCoSys.Common.Tests.Caches
         public async Task RemoveAsync_ShouldRemoveKnownKey()
         {
             // Arrange
-            await _dut.GetOrCreateAsync("KeyA", () => CreateTestableObject("V1", "V2"), CacheDuration.Minutes, 2, CancellationToken.None);
+            await _dut.GetOrCreateAsync("KeyA", token => CreateTestableObject("V1", "V2", token), CacheDuration.Minutes, 2, CancellationToken.None);
             var result = await _dut.GetAsync<TestableClass>("KeyA", CancellationToken.None);
             Assert.IsNotNull(result);
 
@@ -92,9 +139,15 @@ namespace Equinor.ProCoSys.Common.Tests.Caches
             Assert.AreEqual(v2, result.Val2);
         }
 
-        private  async Task<TestableClass> CreateTestableObject(string v1, string v2)
+        private  async Task<TestableClass> CreateTestableObject(string v1, string v2, CancellationToken cancellationToken)
         {
-            return await Task.Run(() => new TestableClass { Val1 = v1, Val2 = v2 });
+            return await Task.Run(() => new TestableClass { Val1 = v1, Val2 = v2 }, cancellationToken);
+        }
+
+        [SuppressMessage("ReSharper", "UnusedParameter.Local")]
+        private Task<TestableClass> ThrowTestableException(string v1, string v2, CancellationToken cancellationToken)
+        {
+            throw new Exception("Test");
         }
 
         private class TestableClass

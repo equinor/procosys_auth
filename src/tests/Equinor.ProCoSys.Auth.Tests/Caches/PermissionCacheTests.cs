@@ -11,6 +11,7 @@ using Equinor.ProCoSys.Common.Tests;
 using Equinor.ProCoSys.Common.Time;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
@@ -86,7 +87,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
 
             OptionsWrapper<MemoryDistributedCacheOptions> _options = new(new MemoryDistributedCacheOptions());
             _dut = new PermissionCache(
-                new DistributedCacheManager(new MemoryDistributedCache(_options)),
+                new DistributedCacheManager(new MemoryDistributedCache(_options), Substitute.For<ILogger<DistributedCacheManager>>()),
                 _currentUserProviderMock,
                 _permissionApiServiceMock,
                 optionsMock);

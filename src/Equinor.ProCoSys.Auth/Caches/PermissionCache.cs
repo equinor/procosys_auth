@@ -74,7 +74,7 @@ namespace Equinor.ProCoSys.Auth.Caches
         public async Task<IList<string>> GetPermissionsForUserAsync(string plantId, Guid userOid, CancellationToken cancellationToken)
             => await _cacheManager.GetOrCreateAsync(
                 PermissionsCacheKey(plantId, userOid),
-                () => _permissionApiService.GetPermissionsForCurrentUserAsync(plantId, cancellationToken),
+                token => _permissionApiService.GetPermissionsForCurrentUserAsync(plantId, token),
                 CacheDuration.Minutes,
                 _options.CurrentValue.PermissionCacheMinutes,
                 cancellationToken);
@@ -103,10 +103,11 @@ namespace Equinor.ProCoSys.Auth.Caches
             return allProjects != null && allProjects.Any(p => p.ProCoSysGuid == projectGuid);
         }
 
-        public async Task<IList<string>> GetRestrictionRolesForUserAsync(string plantId, Guid userOid, CancellationToken cancellationToken)
+        public async Task<IList<string>> GetRestrictionRolesForUserAsync(string plantId, Guid userOid,
+            CancellationToken cancellationToken)
             => await _cacheManager.GetOrCreateAsync(
                 RestrictionRolesCacheKey(plantId, userOid),
-                () => _permissionApiService.GetRestrictionRolesForCurrentUserAsync(plantId, cancellationToken),
+                token => _permissionApiService.GetRestrictionRolesForCurrentUserAsync(plantId, token),
                 CacheDuration.Minutes,
                 _options.CurrentValue.PermissionCacheMinutes,
                 cancellationToken);
@@ -122,7 +123,7 @@ namespace Equinor.ProCoSys.Auth.Caches
         private async Task<IList<AccessableProject>> GetAllProjectsForUserAsync(string plantId, Guid userOid, CancellationToken cancellationToken)
             => await _cacheManager.GetOrCreateAsync(
                 ProjectsCacheKey(plantId, userOid),
-                () => GetAllOpenProjectsAsync(plantId, cancellationToken),
+                token => GetAllOpenProjectsAsync(plantId, token),
                 CacheDuration.Minutes,
                 _options.CurrentValue.PermissionCacheMinutes,
                 cancellationToken);
@@ -130,7 +131,7 @@ namespace Equinor.ProCoSys.Auth.Caches
         private async Task<IList<AccessablePlant>> GetAllPlantsForUserAsync(Guid userOid, CancellationToken cancellationToken)
             => await _cacheManager.GetOrCreateAsync(
                 PlantsCacheKey(userOid),
-                () => _permissionApiService.GetAllPlantsForUserAsync(userOid, cancellationToken),
+                token => _permissionApiService.GetAllPlantsForUserAsync(userOid, token),
                 CacheDuration.Minutes,
                 _options.CurrentValue.PlantCacheMinutes,
                 cancellationToken);

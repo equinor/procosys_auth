@@ -3,20 +3,23 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 
 namespace Equinor.ProCoSys.Common.Caches;
 
-public sealed class DistributedCacheManager(IDistributedCache distributedCache) : ICacheManager
+public sealed class DistributedCacheManager(
+    IDistributedCache distributedCache,
+    ILogger<DistributedCacheManager> logger) : ICacheManager
 {
-    public async Task<T> GetAsync<T>(string key, CancellationToken cancellationToken) where T : class
-        => await GetObjectFromCacheAsync<T>(key, cancellationToken);
+    public Task<T> GetAsync<T>(string key, CancellationToken cancellationToken) where T : class
+        => GetObjectFromCacheAsync<T>(key, cancellationToken);
 
-    public async Task RemoveAsync(string key, CancellationToken cancellationToken)
-        => await distributedCache.RemoveAsync(key, cancellationToken);
+    public Task RemoveAsync(string key, CancellationToken cancellationToken)
+        => distributedCache.RemoveAsync(key, cancellationToken);
 
     public async Task<T> GetOrCreateAsync<T>(
         string key, 
-        Func<Task<T>> fetch, 
+        Func<CancellationToken, Task<T>> fetch, 
         CacheDuration duration, 
         long expiration,
         CancellationToken cancellationToken) where T : class
@@ -27,7 +30,7 @@ public sealed class DistributedCacheManager(IDistributedCache distributedCache) 
             return item;
         }
 
-        item = await fetch();
+        item = await fetch(cancellationToken);
         var serialized = JsonSerializer.Serialize(item);
         await distributedCache.SetStringAsync(key, serialized,
             new DistributedCacheEntryOptions
@@ -35,6 +38,7 @@ public sealed class DistributedCacheManager(IDistributedCache distributedCache) 
                 AbsoluteExpirationRelativeToNow = GetEntryCacheDuration(duration, expiration)
             }, cancellationToken);
 
+        logger.LogInformation("Added {Key} to cache", key);
         return item;
     }
 
@@ -45,9 +49,15 @@ public sealed class DistributedCacheManager(IDistributedCache distributedCache) 
         {
             return null;
         }
-        var deserialized = JsonSerializer.Deserialize<T>(entry);
 
-        return deserialized;
+        try
+        {
+            return JsonSerializer.Deserialize<T>(entry);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Failed to deserialize cached value for key {key} as {typeof(T)}", ex);
+        }
     }
 
     private static TimeSpan GetEntryCacheDuration(CacheDuration duration, long expiration) =>
