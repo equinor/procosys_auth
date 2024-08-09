@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Equinor.ProCoSys.Auth.Client;
 using Microsoft.Extensions.Options;
@@ -63,6 +64,31 @@ namespace Equinor.ProCoSys.Auth.Permission
                       $"&api-version={_apiVersion}";
 
             return await mainApiClientForUser.QueryAndDeserializeAsync<List<string>>(url) ?? [];
+        }
+
+        public async Task<UserPlantPermissionData> GetUserPlantPermissionDataAsync(Guid userOid, string plantId, CancellationToken cancellationToken)
+        {
+            var plantsTask = GetAllPlantsForUserAsync(userOid);
+            var permissionsTask = GetPermissionsForCurrentUserAsync(plantId);
+            var projectsTask = GetAllOpenProjectsForCurrentUserAsync(plantId);
+            var restrictionRolesTask = GetRestrictionRolesForCurrentUserAsync(plantId);
+
+            await Task.WhenAll(plantsTask, permissionsTask, projectsTask, restrictionRolesTask);
+
+            var allPlantsForUser = await plantsTask;
+            var permissions = await permissionsTask;
+            var projects = await projectsTask;
+            var restrictionRoles = await restrictionRolesTask;
+
+            var userPlantPermissionData = new UserPlantPermissionData(
+                Oid: userOid,
+                Plant: plantId,
+                AllPlantsForUser: allPlantsForUser.ToArray(),
+                Permissions: permissions.ToArray(),
+                Projects: projects.ToArray(),
+                RestrictionRoles: restrictionRoles.ToArray()
+            );
+            return userPlantPermissionData;
         }
 
         private async Task TracePlantAsync(string plant)

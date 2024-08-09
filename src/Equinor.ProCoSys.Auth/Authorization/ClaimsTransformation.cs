@@ -5,9 +5,12 @@ using Equinor.ProCoSys.Common.Misc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Equinor.ProCoSys.Auth.Permission;
 using Microsoft.Extensions.Options;
 
 namespace Equinor.ProCoSys.Auth.Authorization
@@ -57,14 +60,27 @@ namespace Equinor.ProCoSys.Auth.Authorization
 
         public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
+            var sw = new Stopwatch();
+            sw.Start();
             _logger.LogInformation("----- {Name} start", GetType().Name);
 
+            var claimsPrincipal = await TransformWrapperAsync(principal);
+
+            sw.Stop();
+            _logger.LogInformation("----- {Name} completed in {ElapsedMilliseconds} ms", GetType().Name, sw.ElapsedMilliseconds);
+            return claimsPrincipal;
+        }
+
+        private async Task<ClaimsPrincipal> TransformWrapperAsync(ClaimsPrincipal principal)
+        {
             // Can't use CurrentUserProvider here. Middleware setting current user not called yet. 
             var userOid = principal.Claims.TryGetOid();
             if (!userOid.HasValue)
             {
                 _logger.LogInformation("----- {Name} early exit, not authenticated yet", GetType().Name);
-                return principal;
+                {
+                    return principal;
+                }
             }
             var claimsIdentity = GetOrCreateClaimsIdentityForThisIssuer(principal);
 
@@ -72,7 +88,9 @@ namespace Equinor.ProCoSys.Auth.Authorization
             if (proCoSysPerson is null)
             {
                 _logger.LogInformation("----- {Name} early exit, {UserOid} don\'t exists in ProCoSys", GetType().Name, userOid);
-                return principal;
+                {
+                    return principal;
+                }
             }
             
             if (proCoSysPerson.Super)
@@ -85,23 +103,30 @@ namespace Equinor.ProCoSys.Auth.Authorization
             if (string.IsNullOrEmpty(plantId))
             {
                 _logger.LogInformation("----- {Name} early exit, not a plant request", GetType().Name);
-                return principal;
+                {
+                    return principal;
+                }
             }
 
-            if (!await _permissionCache.HasUserAccessToPlantAsync(plantId, userOid.Value))
+            var userPlantPermissionData =
+                await _permissionCache.GetUserPlantPermissionDataAsync(userOid.Value, plantId);
+            
+            if (!userPlantPermissionData.HasAccessToPlant(plantId))
             {
                 _logger.LogInformation("----- {Name} early exit, not a valid plant for user", GetType().Name);
-                return principal;
+                {
+                    return principal;
+                }
             }
             
-            await AddRoleForAllPermissionsToIdentityAsync(claimsIdentity, plantId, userOid.Value);
+            AddRoleForAllPermissionsToIdentity(claimsIdentity, userPlantPermissionData.Permissions);
             if (!_authenticatorOptions.CurrentValue.DisableProjectUserDataClaims)
             {
-                await AddUserDataClaimForAllOpenProjectsToIdentityAsync(claimsIdentity, plantId, userOid.Value);
+                AddUserDataClaimForAllOpenProjectsToIdentity(claimsIdentity, userPlantPermissionData.Projects);
             }
             if (!_authenticatorOptions.CurrentValue.DisableRestrictionRoleUserDataClaims)
             {
-                await AddUserDataClaimForAllRestrictionRolesToIdentityAsync(claimsIdentity, plantId, userOid.Value);
+                AddUserDataClaimForAllRestrictionRolesToIdentity(claimsIdentity, userPlantPermissionData.RestrictionRoles);
             }
 
             _logger.LogInformation("----- {Name} completed", GetType().Name);
@@ -159,28 +184,29 @@ namespace Equinor.ProCoSys.Auth.Authorization
             claimsIdentity.AddClaim(CreateClaim(ClaimTypes.Role, Superuser));
         }
 
-        private async Task AddRoleForAllPermissionsToIdentityAsync(ClaimsIdentity claimsIdentity, string plantId, Guid userOid)
+        private static void AddRoleForAllPermissionsToIdentity(ClaimsIdentity claimsIdentity, IReadOnlyCollection<string> permissions)
         {
-            var permissions = await _permissionCache.GetPermissionsForUserAsync(plantId, userOid);
-            permissions?.ToList().ForEach(
-                permission => claimsIdentity.AddClaim(CreateClaim(ClaimTypes.Role, permission)));
+            foreach (var permission in permissions)
+            {
+                claimsIdentity.AddClaim(CreateClaim(ClaimTypes.Role, permission));
+            }
         }
 
-        private async Task AddUserDataClaimForAllOpenProjectsToIdentityAsync(ClaimsIdentity claimsIdentity, string plantId, Guid userOid)
+        private static void AddUserDataClaimForAllOpenProjectsToIdentity(ClaimsIdentity claimsIdentity, IReadOnlyCollection<AccessableProject> projects)
         {
-            var projects = await _permissionCache.GetProjectsForUserAsync(plantId, userOid);
-            projects?.ToList().ForEach(project =>
+            foreach (var project in projects)
             {
                 claimsIdentity.AddClaim(CreateClaim(ClaimTypes.UserData, GetProjectClaimValue(project.Name)));
                 claimsIdentity.AddClaim(CreateClaim(ClaimTypes.UserData, GetProjectClaimValue(project.ProCoSysGuid)));
-            });
+            }
         }
 
-        private async Task AddUserDataClaimForAllRestrictionRolesToIdentityAsync(ClaimsIdentity claimsIdentity, string plantId, Guid userOid)
+        private static void AddUserDataClaimForAllRestrictionRolesToIdentity(ClaimsIdentity claimsIdentity, string[] restrictions)
         {
-            var restrictions = await _permissionCache.GetRestrictionRolesForUserAsync(plantId, userOid);
-            restrictions?.ToList().ForEach(
-                r => claimsIdentity.AddClaim(CreateClaim(ClaimTypes.UserData, GetRestrictionRoleClaimValue(r))));
+            foreach (var restriction in restrictions)
+            {
+                claimsIdentity.AddClaim(CreateClaim(ClaimTypes.UserData, GetRestrictionRoleClaimValue(restriction)));
+            }
         }
 
         private static Claim CreateClaim(string claimType, string claimValue)

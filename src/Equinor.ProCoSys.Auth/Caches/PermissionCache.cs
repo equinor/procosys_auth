@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Equinor.ProCoSys.Auth.Permission;
 using Equinor.ProCoSys.Common.Caches;
@@ -45,8 +46,10 @@ namespace Equinor.ProCoSys.Auth.Caches
 
         public async Task<bool> HasUserAccessToPlantAsync(string plantId, Guid userOid)
         {
-            var plantIds = await GetPlantIdsWithAccessForUserAsync(userOid);
-            return plantIds.Contains(plantId);
+            var permissionData = await GetUserPlantPermissionDataAsync(userOid, plantId);
+            return permissionData.AllPlantsForUser
+                .Select(x => x.Id)
+                .Contains(plantId);
         }
 
         public async Task<bool> HasCurrentUserAccessToPlantAsync(string plantId)
@@ -114,7 +117,15 @@ namespace Equinor.ProCoSys.Auth.Caches
             _cacheManager.Remove(ProjectsCacheKey(plantId, userOid));
             _cacheManager.Remove(PermissionsCacheKey(plantId, userOid));
             _cacheManager.Remove(RestrictionRolesCacheKey(plantId, userOid));
+            _cacheManager.Remove(UserPlantPermissionDataKey(userOid, plantId));
         }
+        
+        public async Task<UserPlantPermissionData> GetUserPlantPermissionDataAsync(Guid userOid, string plantId)
+            => await _cacheManager.GetOrCreate<Task<UserPlantPermissionData?>>(
+                UserPlantPermissionDataKey(userOid, plantId),
+                async () => await _permissionApiService.GetUserPlantPermissionDataAsync(userOid, plantId, CancellationToken.None),
+                CacheDuration.Minutes,
+                _options.CurrentValue.PlantCacheMinutes) ?? new UserPlantPermissionData();
 
         private async Task<IList<AccessableProject>> GetAllProjectsForUserAsync(string plantId, Guid userOid)
             => await _cacheManager.GetOrCreate(
@@ -134,15 +145,19 @@ namespace Equinor.ProCoSys.Auth.Caches
                 CacheDuration.Minutes,
                 _options.CurrentValue.PlantCacheMinutes);
 
-        private string PlantsCacheKey(Guid userOid)
+        private static string UserPlantPermissionDataKey(Guid userOid, string plantId)
+            => $"USER_PLANT_PERMISSION_DATA_{userOid.ToString().ToUpper()}_{plantId}";
+
+        private static string PlantsCacheKey(Guid userOid)
             => $"PLANTS_{userOid.ToString().ToUpper()}";
 
-        private string ProjectsCacheKey(string plantId, Guid userOid)
+        private static string ProjectsCacheKey(string plantId, Guid userOid)
         {
             if (userOid == Guid.Empty)
             {
                 throw new Exception("Illegal userOid for cache");
             }
+
             return $"PROJECTS_{userOid.ToString().ToUpper()}_{plantId}";
         }
 
@@ -152,6 +167,7 @@ namespace Equinor.ProCoSys.Auth.Caches
             {
                 throw new Exception("Illegal userOid for cache");
             }
+
             return $"PERMISSIONS_{userOid.ToString().ToUpper()}_{plantId}";
         }
 
@@ -161,6 +177,7 @@ namespace Equinor.ProCoSys.Auth.Caches
             {
                 throw new Exception("Illegal userOid for cache");
             }
+
             return $"CONTENTRESTRICTIONS_{userOid.ToString().ToUpper()}_{plantId}";
         }
 

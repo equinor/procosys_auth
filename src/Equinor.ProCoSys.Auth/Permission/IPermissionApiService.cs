@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Equinor.ProCoSys.Auth.Permission
@@ -10,5 +11,6 @@ namespace Equinor.ProCoSys.Auth.Permission
         Task<List<string>> GetPermissionsForCurrentUserAsync(string plantId);
         Task<List<AccessableProject>> GetAllOpenProjectsForCurrentUserAsync(string plantId);
         Task<List<string>> GetRestrictionRolesForCurrentUserAsync(string plantId);
+        Task<UserPlantPermissionData> GetUserPlantPermissionDataAsync(Guid userOid, string plantId, CancellationToken cancellationToken);
     }
 }
