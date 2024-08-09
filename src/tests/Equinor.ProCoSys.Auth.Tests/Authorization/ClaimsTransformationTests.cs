@@ -61,6 +61,32 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
             _plantProviderMock.Plant.Returns(Plant1);
 
             var permissionCacheMock = Substitute.For<IPermissionCache>();
+            permissionCacheMock.GetUserPlantPermissionDataAsync(Oid, Plant1, Arg.Any<CancellationToken>())
+                .Returns(new UserPlantPermissionData(Oid, Plant1,
+                    [new AccessablePlant { HasAccess = true, Id = Plant1, Title = Plant1 }], [Permission1_Plant1, Permission2_Plant1],
+                    [
+                        new AccessableProject
+                        {
+                            Name = ProjectName1_Plant1,
+                            ProCoSysGuid = ProjectGuid1_Plant1
+                        },
+                        new AccessableProject
+                        {
+                            Name = ProjectName2_Plant1,
+                            ProCoSysGuid = ProjectGuid2_Plant1
+                        }
+                    ], [Restriction1_Plant1, Restriction2_Plant1]));
+
+            permissionCacheMock.GetUserPlantPermissionDataAsync(Oid, Plant2, Arg.Any<CancellationToken>())
+                .Returns(new UserPlantPermissionData(Oid, Plant2,
+                    [new AccessablePlant { HasAccess = true, Id = Plant2, Title = Plant2 }], [Permission1_Plant2],
+                    [
+                        new AccessableProject
+                        {
+                            Name = ProjectName1_Plant2,
+                            ProCoSysGuid = ProjectGuid1_Plant2
+                        }
+                    ], [Restriction1_Plant2]));
             permissionCacheMock.HasUserAccessToPlantAsync(Plant1, Oid, Arg.Any<CancellationToken>()).Returns(true);
             permissionCacheMock.HasUserAccessToPlantAsync(Plant2, Oid, Arg.Any<CancellationToken>()).Returns(true);
             permissionCacheMock.GetPermissionsForUserAsync(Plant1, Oid, Arg.Any<CancellationToken>())
@@ -300,7 +326,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
             Assert.AreEqual(0, GetRoleClaims(result.Claims).Count);
             Assert.AreEqual(0, GetRestrictionRoleClaims(result.Claims).Count);
         }
-        
+
         [TestMethod]
         public async Task TransformAsync_OnSecondPlant_ShouldClearAllClaimsForFirstPlant()
         {
@@ -318,11 +344,13 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
 
             claims = GetProjectClaims(result.Claims);
             Assert.AreEqual(2, claims.Count);
-            Assert.IsNotNull(claims.SingleOrDefault(r => r.Value == ClaimsTransformation.GetProjectClaimValue(ProjectName1_Plant2)));
+            Assert.IsNotNull(claims.SingleOrDefault(r =>
+                r.Value == ClaimsTransformation.GetProjectClaimValue(ProjectName1_Plant2)));
 
             claims = GetRestrictionRoleClaims(result.Claims);
             Assert.AreEqual(1, claims.Count);
-            Assert.IsNotNull(claims.SingleOrDefault(r => r.Value == ClaimsTransformation.GetRestrictionRoleClaimValue(Restriction1_Plant2)));
+            Assert.IsNotNull(claims.SingleOrDefault(r =>
+                r.Value == ClaimsTransformation.GetRestrictionRoleClaimValue(Restriction1_Plant2)));
         }
 
         [TestMethod]
@@ -356,25 +384,30 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         {
             var projectClaims = GetProjectClaims(claims);
             Assert.AreEqual(4, projectClaims.Count);
-            Assert.IsTrue(projectClaims.Any(r => r.Value == ClaimsTransformation.GetProjectClaimValue(ProjectName1_Plant1)));
-            Assert.IsTrue(projectClaims.Any(r => r.Value == ClaimsTransformation.GetProjectClaimValue(ProjectGuid1_Plant1)));
-            Assert.IsTrue(projectClaims.Any(r => r.Value == ClaimsTransformation.GetProjectClaimValue(ProjectName2_Plant1)));
-            Assert.IsTrue(projectClaims.Any(r => r.Value == ClaimsTransformation.GetProjectClaimValue(ProjectGuid2_Plant1)));
+            Assert.IsTrue(projectClaims.Any(r =>
+                r.Value == ClaimsTransformation.GetProjectClaimValue(ProjectName1_Plant1)));
+            Assert.IsTrue(projectClaims.Any(r =>
+                r.Value == ClaimsTransformation.GetProjectClaimValue(ProjectGuid1_Plant1)));
+            Assert.IsTrue(projectClaims.Any(r =>
+                r.Value == ClaimsTransformation.GetProjectClaimValue(ProjectName2_Plant1)));
+            Assert.IsTrue(projectClaims.Any(r =>
+                r.Value == ClaimsTransformation.GetProjectClaimValue(ProjectGuid2_Plant1)));
         }
 
         private void AssertRestrictionRoleForPlant1(IEnumerable<Claim> claims)
         {
             var restrictionRoleClaims = GetRestrictionRoleClaims(claims);
             Assert.AreEqual(2, restrictionRoleClaims.Count);
-            Assert.IsTrue(restrictionRoleClaims.Any(r => r.Value == ClaimsTransformation.GetRestrictionRoleClaimValue(Restriction1_Plant1)));
-            Assert.IsTrue(restrictionRoleClaims.Any(r => r.Value == ClaimsTransformation.GetRestrictionRoleClaimValue(Restriction2_Plant1)));
+            Assert.IsTrue(restrictionRoleClaims.Any(r =>
+                r.Value == ClaimsTransformation.GetRestrictionRoleClaimValue(Restriction1_Plant1)));
+            Assert.IsTrue(restrictionRoleClaims.Any(r =>
+                r.Value == ClaimsTransformation.GetRestrictionRoleClaimValue(Restriction2_Plant1)));
         }
 
         private static List<Claim> GetRestrictionRoleClaims(IEnumerable<Claim> claims)
             => claims
                 .Where(c => c.Type == ClaimTypes.UserData &&
-                            c.Value.StartsWith(ClaimsTransformation.
-                                RestrictionRolePrefix))
+                            c.Value.StartsWith(ClaimsTransformation.RestrictionRolePrefix))
                 .ToList();
 
         private static List<Claim> GetRoleClaims(IEnumerable<Claim> claims)

@@ -66,6 +66,31 @@ namespace Equinor.ProCoSys.Auth.Permission
             return await mainApiClientForUser.QueryAndDeserializeAsync<List<string>>(url, cancellationToken) ?? [];
         }
 
+        public async Task<UserPlantPermissionData> GetUserPlantPermissionDataAsync(Guid userOid, string plantId, CancellationToken cancellationToken)
+        {
+            var plantsTask = GetAllPlantsForUserAsync(userOid, cancellationToken);
+            var permissionsTask = GetPermissionsForCurrentUserAsync(plantId, cancellationToken);
+            var projectsTask = GetAllOpenProjectsForCurrentUserAsync(plantId, cancellationToken);
+            var restrictionRolesTask = GetRestrictionRolesForCurrentUserAsync(plantId, cancellationToken);
+
+            await Task.WhenAll(plantsTask, permissionsTask, projectsTask, restrictionRolesTask);
+
+            var allPlantsForUser = await plantsTask;
+            var permissions = await permissionsTask;
+            var projects = await projectsTask;
+            var restrictionRoles = await restrictionRolesTask;
+
+            var userPlantPermissionData = new UserPlantPermissionData(
+                Oid: userOid,
+                Plant: plantId,
+                AllPlantsForUser: allPlantsForUser.ToArray(),
+                Permissions: permissions.ToArray(),
+                Projects: projects.ToArray(),
+                RestrictionRoles: restrictionRoles.ToArray()
+            );
+            return userPlantPermissionData;
+        }
+
         private async Task TracePlantAsync(string plant, CancellationToken cancellationToken)
         {
             var url = $"{_baseAddress}Me/TracePlant" +

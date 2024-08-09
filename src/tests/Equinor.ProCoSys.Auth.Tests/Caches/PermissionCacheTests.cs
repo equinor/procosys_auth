@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -376,7 +376,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Caches
             await dut.ClearAllAsync(Plant1IdWithAccess, _currentUserOid, CancellationToken.None);
 
             // Assert
-            await cacheManagerMock.Received(4).RemoveAsync(Arg.Any<string>(), CancellationToken.None);
+            await cacheManagerMock.Received(5).RemoveAsync(Arg.Any<string>(), CancellationToken.None);
         }
 
         private void AssertPlants(IList<string> result)

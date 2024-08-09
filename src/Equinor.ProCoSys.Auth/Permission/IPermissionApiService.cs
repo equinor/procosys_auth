@@ -11,5 +11,6 @@ namespace Equinor.ProCoSys.Auth.Permission
         Task<List<string>> GetPermissionsForCurrentUserAsync(string plantId, CancellationToken cancellationToken);
         Task<List<AccessableProject>> GetAllOpenProjectsForCurrentUserAsync(string plantId, CancellationToken cancellationToken);
         Task<List<string>> GetRestrictionRolesForCurrentUserAsync(string plantId, CancellationToken cancellationToken);
+        Task<UserPlantPermissionData> GetUserPlantPermissionDataAsync(Guid userOid, string plantId, CancellationToken cancellationToken);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ public sealed class DistributedCacheManager(
     IDistributedCache distributedCache,
     ILogger<DistributedCacheManager> logger) : ICacheManager
 {
-    public Task<T> GetAsync<T>(string key, CancellationToken cancellationToken) where T : class
+    public Task<T> GetAsync<T>(string key, CancellationToken cancellationToken)
         => GetObjectFromCacheAsync<T>(key, cancellationToken);
 
     public Task RemoveAsync(string key, CancellationToken cancellationToken)
@@ -22,11 +23,15 @@ public sealed class DistributedCacheManager(
         Func<CancellationToken, Task<T>> fetch, 
         CacheDuration duration, 
         long expiration,
-        CancellationToken cancellationToken) where T : class
+        CancellationToken cancellationToken)
     {
+        var sw = new Stopwatch();
+        sw.Start();
         var item = await GetObjectFromCacheAsync<T>(key, cancellationToken);
-        if (item is not null)
+        if (item != null && !item.Equals(default(T)))
         {
+            sw.Stop();
+            logger.LogInformation("Fetching from cache ({Elapsed}ms) '{Key}', Elapsed ", key, sw.ElapsedMilliseconds);
             return item;
         }
 
@@ -38,16 +43,18 @@ public sealed class DistributedCacheManager(
                 AbsoluteExpirationRelativeToNow = GetEntryCacheDuration(duration, expiration)
             }, cancellationToken);
 
-        logger.LogInformation("Added {Key} to cache", key);
+        sw.Stop();
+        logger.LogInformation("Added {Key} to cache ({Elapsed}ms)", key, sw.ElapsedMilliseconds);
         return item;
     }
+    
 
-    private async Task<T> GetObjectFromCacheAsync<T>(string key, CancellationToken cancellationToken) where T : class
+    private async Task<T> GetObjectFromCacheAsync<T>(string key, CancellationToken cancellationToken)
     {
         var entry = await distributedCache.GetStringAsync(key, cancellationToken);
         if (entry is null)
         {
-            return null;
+            return default;
         }
 
         try

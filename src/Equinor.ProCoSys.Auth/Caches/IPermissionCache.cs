@@ -23,6 +23,8 @@ namespace Equinor.ProCoSys.Auth.Caches
 
         Task<IList<string>> GetRestrictionRolesForUserAsync(string plantId, Guid userOid, CancellationToken cancellationToken);
 
+        Task<UserPlantPermissionData> GetUserPlantPermissionDataAsync(Guid userOid, string plantId,
+            CancellationToken cancellationToken);
         Task ClearAllAsync(string plantId, Guid userOid, CancellationToken cancellationToken);
     }
 }
