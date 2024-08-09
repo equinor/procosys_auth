@@ -12,5 +12,5 @@ public readonly record struct UserPlantPermissionData(
     string[] RestrictionRoles
 )
 {
-    public bool HasAccessToPlant(string plantId) => AllPlantsForUser.Any(p => p.Id == plantId);
+    public bool HasAccessToPlant(string plantId) => AllPlantsForUser.Any(p => p.Id == plantId && p.HasAccess);
 }
