@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using Equinor.ProCoSys.Auth.Authentication;
 using Equinor.ProCoSys.Auth.Authorization;
@@ -53,73 +54,73 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
                 Super = false,
                 AzureOid = Oid.ToString()
             };
-            _localPersonRepositoryMock.GetAsync(Oid).Returns(proCoSysPersonNotSuper);
-            _personCacheMock.GetAsync(Oid).Returns(proCoSysPersonNotSuper);
+            _localPersonRepositoryMock.GetAsync(Oid, Arg.Any<CancellationToken>()).Returns(proCoSysPersonNotSuper);
+            _personCacheMock.GetAsync(Oid, Arg.Any<CancellationToken>()).Returns(proCoSysPersonNotSuper);
 
             _plantProviderMock = Substitute.For<IPlantProvider>();
             _plantProviderMock.Plant.Returns(Plant1);
 
             var permissionCacheMock = Substitute.For<IPermissionCache>();
-            permissionCacheMock.GetUserPlantPermissionDataAsync(Oid, Plant1)
+            permissionCacheMock.GetUserPlantPermissionDataAsync(Oid, Plant1, Arg.Any<CancellationToken>())
                 .Returns(new UserPlantPermissionData(Oid, Plant1,
-                    [new() { HasAccess = true, Id = Plant1, Title = Plant1 }], [Permission1_Plant1, Permission2_Plant1],
+                    [new AccessablePlant { HasAccess = true, Id = Plant1, Title = Plant1 }], [Permission1_Plant1, Permission2_Plant1],
                     [
-                        new()
+                        new AccessableProject
                         {
                             Name = ProjectName1_Plant1,
                             ProCoSysGuid = ProjectGuid1_Plant1
                         },
-                        new()
+                        new AccessableProject
                         {
                             Name = ProjectName2_Plant1,
                             ProCoSysGuid = ProjectGuid2_Plant1
                         }
                     ], [Restriction1_Plant1, Restriction2_Plant1]));
 
-            permissionCacheMock.GetUserPlantPermissionDataAsync(Oid, Plant2)
+            permissionCacheMock.GetUserPlantPermissionDataAsync(Oid, Plant2, Arg.Any<CancellationToken>())
                 .Returns(new UserPlantPermissionData(Oid, Plant2,
-                    [new() { HasAccess = true, Id = Plant2, Title = Plant2 }], [Permission1_Plant2],
+                    [new AccessablePlant { HasAccess = true, Id = Plant2, Title = Plant2 }], [Permission1_Plant2],
                     [
-                        new()
+                        new AccessableProject
                         {
                             Name = ProjectName1_Plant2,
                             ProCoSysGuid = ProjectGuid1_Plant2
                         }
                     ], [Restriction1_Plant2]));
-            // permissionCacheMock.HasUserAccessToPlantAsync(Plant1, Oid).Returns(true);
-            // permissionCacheMock.HasUserAccessToPlantAsync(Plant2, Oid).Returns(true);
-            // permissionCacheMock.GetPermissionsForUserAsync(Plant1, Oid)
-            //     .Returns(new List<string> { Permission1_Plant1, Permission2_Plant1 });
-            // permissionCacheMock.GetProjectsForUserAsync(Plant1, Oid)
-            //     .Returns(new List<AccessableProject>
-            //     {
-            //         new()
-            //         {
-            //             Name = ProjectName1_Plant1,
-            //             ProCoSysGuid = ProjectGuid1_Plant1
-            //         },
-            //         new()
-            //         {
-            //             Name = ProjectName2_Plant1,
-            //             ProCoSysGuid = ProjectGuid2_Plant1
-            //         }
-            //     });
-            // permissionCacheMock.GetRestrictionRolesForUserAsync(Plant1, Oid)
-            //     .Returns(new List<string> { Restriction1_Plant1, Restriction2_Plant1 });
-            //
-            // permissionCacheMock.GetPermissionsForUserAsync(Plant2, Oid)
-            //     .Returns(new List<string> { Permission1_Plant2 });
-            // permissionCacheMock.GetProjectsForUserAsync(Plant2, Oid)
-            //     .Returns(new List<AccessableProject>
-            //     {
-            //         new()
-            //         {
-            //             Name = ProjectName1_Plant2,
-            //             ProCoSysGuid = ProjectGuid1_Plant2
-            //         }
-            //     });
-            // permissionCacheMock.GetRestrictionRolesForUserAsync(Plant2, Oid)
-            //     .Returns(new List<string> { Restriction1_Plant2 });
+            permissionCacheMock.HasUserAccessToPlantAsync(Plant1, Oid, Arg.Any<CancellationToken>()).Returns(true);
+            permissionCacheMock.HasUserAccessToPlantAsync(Plant2, Oid, Arg.Any<CancellationToken>()).Returns(true);
+            permissionCacheMock.GetPermissionsForUserAsync(Plant1, Oid, Arg.Any<CancellationToken>())
+                .Returns(new List<string> {Permission1_Plant1, Permission2_Plant1});
+            permissionCacheMock.GetProjectsForUserAsync(Plant1, Oid, Arg.Any<CancellationToken>())
+                .Returns(new List<AccessableProject>
+                {
+                    new() 
+                    {
+                        Name = ProjectName1_Plant1, 
+                        ProCoSysGuid = ProjectGuid1_Plant1
+                    },
+                    new()
+                    {
+                        Name = ProjectName2_Plant1, 
+                        ProCoSysGuid = ProjectGuid2_Plant1
+                    }
+                });
+            permissionCacheMock.GetRestrictionRolesForUserAsync(Plant1, Oid, Arg.Any<CancellationToken>())
+                .Returns(new List<string> {Restriction1_Plant1, Restriction2_Plant1});
+
+            permissionCacheMock.GetPermissionsForUserAsync(Plant2, Oid, Arg.Any<CancellationToken>())
+                .Returns(new List<string> {Permission1_Plant2});
+            permissionCacheMock.GetProjectsForUserAsync(Plant2, Oid, Arg.Any<CancellationToken>())
+                .Returns(new List<AccessableProject>
+                {
+                    new()
+                    {
+                        Name = ProjectName1_Plant2,
+                        ProCoSysGuid = ProjectGuid1_Plant2
+                    }
+                });
+            permissionCacheMock.GetRestrictionRolesForUserAsync(Plant2, Oid, Arg.Any<CancellationToken>())
+                .Returns(new List<string> {Restriction1_Plant2});
 
             var loggerMock = Substitute.For<ILogger<ClaimsTransformation>>();
 
@@ -163,7 +164,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
             {
                 Super = true
             };
-            _localPersonRepositoryMock.GetAsync(Oid).Returns(proCoSysPersonSuper);
+            _localPersonRepositoryMock.GetAsync(Oid, Arg.Any<CancellationToken>()).Returns(proCoSysPersonSuper);
 
             // Act
             var result = await _dut.TransformAsync(_principalWithOid);
@@ -182,7 +183,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
             {
                 Super = true
             };
-            _localPersonRepositoryMock.GetAsync(Oid).Returns(proCoSysPersonSuper);
+            _localPersonRepositoryMock.GetAsync(Oid, Arg.Any<CancellationToken>()).Returns(proCoSysPersonSuper);
 
             // Act
             var result = await _dut.TransformAsync(_principalWithOid);
@@ -284,8 +285,8 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         [TestMethod]
         public async Task TransformAsync_ShouldNotAddAnyClaims_WhenPersonNotFoundInProCoSys()
         {
-            _localPersonRepositoryMock.GetAsync(Oid).Returns((ProCoSysPerson)null);
-            _personCacheMock.GetAsync(Oid).Returns((ProCoSysPerson)null);
+            _localPersonRepositoryMock.GetAsync(Oid, Arg.Any<CancellationToken>()).Returns((ProCoSysPerson)null);
+            _personCacheMock.GetAsync(Oid, Arg.Any<CancellationToken>()).Returns((ProCoSysPerson)null);
 
             var result = await _dut.TransformAsync(_principalWithOid);
 
@@ -297,7 +298,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         [TestMethod]
         public async Task TransformAsync_ShouldAddRoleClaimsForPermissions_WhenPersonFoundLocalButNotInCache()
         {
-            _personCacheMock.GetAsync(Oid).Returns((ProCoSysPerson)null);
+            _personCacheMock.GetAsync(Oid, Arg.Any<CancellationToken>()).Returns((ProCoSysPerson)null);
 
             var result = await _dut.TransformAsync(_principalWithOid);
 
@@ -307,7 +308,7 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
         [TestMethod]
         public async Task TransformAsync_ShouldAddRoleClaimsForPermissions_WhenPersonNotFoundLocalButInCache()
         {
-            _localPersonRepositoryMock.GetAsync(Oid).Returns((ProCoSysPerson)null);
+            _localPersonRepositoryMock.GetAsync(Oid, Arg.Any<CancellationToken>()).Returns((ProCoSysPerson)null);
 
             var result = await _dut.TransformAsync(_principalWithOid);
 
@@ -359,13 +360,13 @@ namespace Equinor.ProCoSys.Auth.Tests.Authorization
 
             Assert.IsTrue(result.Claims.PersonExistsLocally(Oid.ToString()));
         }
-
+        
         [TestMethod]
         public async Task TransformAsync_ShouldNotAddExistsClaimsFoPerson_WhenPersonNotExists()
         {
-            _localPersonRepositoryMock.GetAsync(Oid).Returns((ProCoSysPerson)null);
-            _personCacheMock.GetAsync(Oid).Returns((ProCoSysPerson)null);
-
+            _localPersonRepositoryMock.GetAsync(Oid, Arg.Any<CancellationToken>()).Returns((ProCoSysPerson)null);
+            _personCacheMock.GetAsync(Oid, Arg.Any<CancellationToken>()).Returns((ProCoSysPerson)null);
+            
             var result = await _dut.TransformAsync(_principalWithOid);
 
             Assert.IsFalse(result.Claims.PersonExistsLocally(Oid.ToString()));

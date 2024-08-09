@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using Equinor.ProCoSys.Auth.Permission;
 using Microsoft.Extensions.Options;
@@ -64,59 +65,42 @@ namespace Equinor.ProCoSys.Auth.Authorization
             sw.Start();
             _logger.LogInformation("----- {Name} start", GetType().Name);
 
-            var claimsPrincipal = await TransformWrapperAsync(principal);
-
-            sw.Stop();
-            _logger.LogInformation("----- {Name} completed in {ElapsedMilliseconds} ms", GetType().Name, sw.ElapsedMilliseconds);
-            return claimsPrincipal;
-        }
-
-        private async Task<ClaimsPrincipal> TransformWrapperAsync(ClaimsPrincipal principal)
-        {
             // Can't use CurrentUserProvider here. Middleware setting current user not called yet. 
             var userOid = principal.Claims.TryGetOid();
             if (!userOid.HasValue)
             {
-                _logger.LogInformation("----- {Name} early exit, not authenticated yet", GetType().Name);
-                {
-                    return principal;
-                }
+                sw.Stop();
+                _logger.LogInformation("----- {Name} early exit, not authenticated yet, Elapsed ({Elapsed}ms)", GetType().Name, sw.ElapsedMilliseconds);
+                return principal;
             }
             var claimsIdentity = GetOrCreateClaimsIdentityForThisIssuer(principal);
 
             var proCoSysPerson = await GetProCoSysPersonAsync(userOid.Value, claimsIdentity);
             if (proCoSysPerson is null)
             {
-                _logger.LogInformation("----- {Name} early exit, {UserOid} don\'t exists in ProCoSys", GetType().Name, userOid);
-                {
-                    return principal;
-                }
+                _logger.LogInformation("----- {Name} early exit, {UserOid} don\'t exists in ProCoSys, Elapsed ({Elapsed}ms)", GetType().Name, userOid, sw.ElapsedMilliseconds);
+                return principal;
             }
             
             if (proCoSysPerson.Super)
             {
                 AddSuperRoleToIdentity(claimsIdentity);
-                _logger.LogInformation("----- {Name}: {UserOid} logged in as a ProCoSys superuser", GetType().Name, userOid);
+                _logger.LogInformation("----- {Name}: {UserOid} logged in as a ProCoSys superuser, Elapsed ({Elapsed}ms)", GetType().Name, userOid, sw.ElapsedMilliseconds);
             }
 
             var plantId = _plantProvider.Plant;
             if (string.IsNullOrEmpty(plantId))
             {
-                _logger.LogInformation("----- {Name} early exit, not a plant request", GetType().Name);
-                {
-                    return principal;
-                }
+                _logger.LogInformation("----- {Name} early exit, not a plant request, Elapsed ({Elapsed}ms)", GetType().Name, sw.ElapsedMilliseconds);
+                return principal;
             }
-
-            var userPlantPermissionData =
-                await _permissionCache.GetUserPlantPermissionDataAsync(userOid.Value, plantId);
+            
+            var userPlantPermissionData = await _permissionCache.GetUserPlantPermissionDataAsync(userOid.Value, plantId, CancellationToken.None);
             
             if (!userPlantPermissionData.HasAccessToPlant(plantId))
             {
-                _logger.LogInformation("----- {Name} early exit, not a valid plant for user", GetType().Name);
-                {
-                    return principal;
-                }
+                _logger.LogInformation("----- {Name} early exit, not a valid plant for user, Elapsed ({Elapsed}ms)", GetType().Name, sw.ElapsedMilliseconds);
+                return principal;
             }
             
             AddRoleForAllPermissionsToIdentity(claimsIdentity, userPlantPermissionData.Permissions);
@@ -129,7 +113,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
                 AddUserDataClaimForAllRestrictionRolesToIdentity(claimsIdentity, userPlantPermissionData.RestrictionRoles);
             }
 
-            _logger.LogInformation("----- {Name} completed", GetType().Name);
+            _logger.LogInformation("----- {Name} completed, Elapsed ({Elapsed}ms)", GetType().Name, sw.ElapsedMilliseconds);
             return principal;
         }
 
@@ -147,14 +131,14 @@ namespace Equinor.ProCoSys.Auth.Authorization
         {
             // check if user exists in local repository before checking
             // cache which get user from ProCoSys
-            var proCoSysPerson = await _localPersonRepository.GetAsync(userOid);
+            var proCoSysPerson = await _localPersonRepository.GetAsync(userOid, CancellationToken.None);
             if (proCoSysPerson is not null)
             {
                 AddPersonExistsClaim(claimsIdentity, proCoSysPerson.AzureOid);
                 return proCoSysPerson;
             }
 
-            return await _personCache.GetAsync(userOid);
+            return await _personCache.GetAsync(userOid, CancellationToken.None);
         }
 
         private ClaimsIdentity GetOrCreateClaimsIdentityForThisIssuer(ClaimsPrincipal principal)
@@ -184,7 +168,7 @@ namespace Equinor.ProCoSys.Auth.Authorization
             claimsIdentity.AddClaim(CreateClaim(ClaimTypes.Role, Superuser));
         }
 
-        private static void AddRoleForAllPermissionsToIdentity(ClaimsIdentity claimsIdentity, IReadOnlyCollection<string> permissions)
+		private static void AddRoleForAllPermissionsToIdentity(ClaimsIdentity claimsIdentity, IReadOnlyCollection<string> permissions)
         {
             foreach (var permission in permissions)
             {

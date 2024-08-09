@@ -28,31 +28,25 @@ namespace Equinor.ProCoSys.Auth.Caches
             _options = options;
         }
 
-        public async Task<ProCoSysPerson> GetAsync(Guid userOid, bool includeVoidedPerson = false, CancellationToken cancellationToken = default)
-            => await _cacheManager.GetOrCreate(
+        public async Task<ProCoSysPerson> GetAsync(Guid userOid, CancellationToken cancellationToken, bool includeVoidedPerson = false)
+            => await _cacheManager.GetOrCreateAsync(
                 PersonsCacheKey(userOid),
-                async () =>
-                {
-                    var person = await _personApiService.TryGetPersonByOidAsync(userOid, includeVoidedPerson, cancellationToken);
-                    return person;
-                },
+                token => _personApiService.TryGetPersonByOidAsync(userOid, includeVoidedPerson, token),
                 CacheDuration.Minutes,
-                _options.CurrentValue.PersonCacheMinutes);
+                _options.CurrentValue.PersonCacheMinutes, 
+                cancellationToken);
 
-        public async Task<List<ProCoSysPerson>> GetAllPersonsAsync(string plant, CancellationToken cancellationToken = default)
-            => await _cacheManager.GetOrCreate(
+        public async Task<List<ProCoSysPerson>> GetAllPersonsAsync(string plant, CancellationToken cancellationToken)
+            => await _cacheManager.GetOrCreateAsync(
                 PersonsCacheKey(plant),
-                async () =>
-                {
-                    var persons = await _personApiService.GetAllPersonsAsync(plant, cancellationToken);
-                    return persons;
-                },
+                token => _personApiService.GetAllPersonsAsync(plant, token),
                 CacheDuration.Minutes,
-                _options.CurrentValue.PersonCacheMinutes);
+                _options.CurrentValue.PersonCacheMinutes,
+                cancellationToken);
 
-        public async Task<bool> ExistsAsync(Guid userOid, bool includeVoidedPerson = false, CancellationToken cancellationToken = default)
+        public async Task<bool> ExistsAsync(Guid userOid, CancellationToken cancellationToken, bool includeVoidedPerson = false)
         {
-            var pcsPerson = await GetAsync(userOid, includeVoidedPerson, cancellationToken);
+            var pcsPerson = await GetAsync(userOid, cancellationToken, includeVoidedPerson);
             return pcsPerson != null;
         }
 

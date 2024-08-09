@@ -38,112 +38,115 @@ namespace Equinor.ProCoSys.Auth.Caches
             _options = options;
         }
 
-        public async Task<IList<string>> GetPlantIdsWithAccessForUserAsync(Guid userOid)
+        public async Task<IList<string>> GetPlantIdsWithAccessForUserAsync(Guid userOid, CancellationToken cancellationToken)
         {
-            var allPlants = await GetAllPlantsForUserAsync(userOid);
+            var allPlants = await GetAllPlantsForUserAsync(userOid, cancellationToken);
             return allPlants?.Where(p => p.HasAccess).Select(p => p.Id).ToList();
         }
 
-        public async Task<bool> HasUserAccessToPlantAsync(string plantId, Guid userOid)
+        public async Task<bool> HasUserAccessToPlantAsync(string plantId, Guid userOid, CancellationToken cancellationToken)
         {
-            var permissionData = await GetUserPlantPermissionDataAsync(userOid, plantId);
-            return permissionData.AllPlantsForUser
-                .Select(x => x.Id)
-                .Contains(plantId);
+            var plantIds = await GetPlantIdsWithAccessForUserAsync(userOid, cancellationToken);
+            return plantIds.Contains(plantId);
         }
 
-        public async Task<bool> HasCurrentUserAccessToPlantAsync(string plantId)
+        public async Task<bool> HasCurrentUserAccessToPlantAsync(string plantId, CancellationToken cancellationToken)
         {
             var userOid = _currentUserProvider.GetCurrentUserOid();
 
-            return await HasUserAccessToPlantAsync(plantId, userOid);
+            return await HasUserAccessToPlantAsync(plantId, userOid, cancellationToken);
         }
 
-        public async Task<bool> IsAValidPlantForCurrentUserAsync(string plantId)
+        public async Task<bool> IsAValidPlantForCurrentUserAsync(string plantId, CancellationToken cancellationToken)
         {
             var userOid = _currentUserProvider.GetCurrentUserOid();
-            var allPlants = await GetAllPlantsForUserAsync(userOid);
+            var allPlants = await GetAllPlantsForUserAsync(userOid, cancellationToken);
             return allPlants != null && allPlants.Any(p => p.Id == plantId);
         }
 
-        public async Task<string> GetPlantTitleForCurrentUserAsync(string plantId)
+        public async Task<string> GetPlantTitleForCurrentUserAsync(string plantId, CancellationToken cancellationToken)
         {
             var userOid = _currentUserProvider.GetCurrentUserOid();
-            var allPlants = await GetAllPlantsForUserAsync(userOid);
+            var allPlants = await GetAllPlantsForUserAsync(userOid, cancellationToken);
             return allPlants?.Where(p => p.Id == plantId).SingleOrDefault()?.Title;
         }
 
-        public async Task<IList<string>> GetPermissionsForUserAsync(string plantId, Guid userOid)
-            => await _cacheManager.GetOrCreate(
+        public async Task<IList<string>> GetPermissionsForUserAsync(string plantId, Guid userOid, CancellationToken cancellationToken)
+            => await _cacheManager.GetOrCreateAsync(
                 PermissionsCacheKey(plantId, userOid),
-                async () => await _permissionApiService.GetPermissionsForCurrentUserAsync(plantId),
+                token => _permissionApiService.GetPermissionsForCurrentUserAsync(plantId, token),
                 CacheDuration.Minutes,
-                _options.CurrentValue.PermissionCacheMinutes);
+                _options.CurrentValue.PermissionCacheMinutes,
+                cancellationToken);
 
-        public async Task<IList<string>> GetProjectNamesForUserAsync(string plantId, Guid userOid)
+        public async Task<IList<string>> GetProjectNamesForUserAsync(string plantId, Guid userOid, CancellationToken cancellationToken)
         {
-            var allProjects = await GetProjectsForUserAsync(plantId, userOid);
+            var allProjects = await GetProjectsForUserAsync(plantId, userOid, cancellationToken);
             return allProjects?.Select(p => p.Name).ToList();
         }
 
-        public async Task<IList<AccessableProject>> GetProjectsForUserAsync(string plantId, Guid userOid)
+        public async Task<IList<AccessableProject>> GetProjectsForUserAsync(string plantId, Guid userOid, CancellationToken cancellationToken)
         {
-            var allProjects = await GetAllProjectsForUserAsync(plantId, userOid);
+            var allProjects = await GetAllProjectsForUserAsync(plantId, userOid, cancellationToken);
             return allProjects?.Where(p => p.HasAccess).ToList();
         }
 
-        public async Task<bool> IsAValidProjectForUserAsync(string plantId, Guid userOid, string projectName)
+        public async Task<bool> IsAValidProjectForUserAsync(string plantId, Guid userOid, string projectName, CancellationToken cancellationToken)
         {
-            var allProjects = await GetAllProjectsForUserAsync(plantId, userOid);
+            var allProjects = await GetAllProjectsForUserAsync(plantId, userOid, cancellationToken);
             return allProjects != null && allProjects.Any(p => p.Name == projectName);
         }
 
-        public async Task<bool> IsAValidProjectForUserAsync(string plantId, Guid userOid, Guid projectGuid)
+        public async Task<bool> IsAValidProjectForUserAsync(string plantId, Guid userOid, Guid projectGuid, CancellationToken cancellationToken)
         {
-            var allProjects = await GetAllProjectsForUserAsync(plantId, userOid);
+            var allProjects = await GetAllProjectsForUserAsync(plantId, userOid, cancellationToken);
             return allProjects != null && allProjects.Any(p => p.ProCoSysGuid == projectGuid);
         }
 
-        public async Task<IList<string>> GetRestrictionRolesForUserAsync(string plantId, Guid userOid)
-            => await _cacheManager.GetOrCreate(
+        public async Task<IList<string>> GetRestrictionRolesForUserAsync(string plantId, Guid userOid,
+            CancellationToken cancellationToken)
+            => await _cacheManager.GetOrCreateAsync(
                 RestrictionRolesCacheKey(plantId, userOid),
-                async () => await _permissionApiService.GetRestrictionRolesForCurrentUserAsync(plantId),
+                token => _permissionApiService.GetRestrictionRolesForCurrentUserAsync(plantId, token),
                 CacheDuration.Minutes,
-                _options.CurrentValue.PermissionCacheMinutes);
+                _options.CurrentValue.PermissionCacheMinutes,
+                cancellationToken);
 
-        public void ClearAll(string plantId, Guid userOid)
+        public async Task ClearAllAsync(string plantId, Guid userOid, CancellationToken cancellationToken)
         {
-            _cacheManager.Remove(PlantsCacheKey(userOid));
-            _cacheManager.Remove(ProjectsCacheKey(plantId, userOid));
-            _cacheManager.Remove(PermissionsCacheKey(plantId, userOid));
-            _cacheManager.Remove(RestrictionRolesCacheKey(plantId, userOid));
-            _cacheManager.Remove(UserPlantPermissionDataKey(userOid, plantId));
+            var t1 = _cacheManager.RemoveAsync(PlantsCacheKey(userOid), cancellationToken);
+            var t2 =_cacheManager.RemoveAsync(ProjectsCacheKey(plantId, userOid), cancellationToken);
+            var t3 =_cacheManager.RemoveAsync(PermissionsCacheKey(plantId, userOid), cancellationToken);
+            var t4 =_cacheManager.RemoveAsync(RestrictionRolesCacheKey(plantId, userOid), cancellationToken);
+            var t5 =_cacheManager.RemoveAsync(UserPlantPermissionDataKey(userOid, plantId), cancellationToken);
+
+            await Task.WhenAll([t1, t2, t3, t4, t5]);
         }
         
-        public async Task<UserPlantPermissionData> GetUserPlantPermissionDataAsync(Guid userOid, string plantId)
-            => await _cacheManager.GetOrCreate<Task<UserPlantPermissionData?>>(
+        public async Task<UserPlantPermissionData> GetUserPlantPermissionDataAsync(Guid userOid, string plantId,
+            CancellationToken cancellationToken)
+            => await _cacheManager.GetOrCreateAsync(
                 UserPlantPermissionDataKey(userOid, plantId),
-                async () => await _permissionApiService.GetUserPlantPermissionDataAsync(userOid, plantId, CancellationToken.None),
+                ct => _permissionApiService.GetUserPlantPermissionDataAsync(userOid, plantId, ct),
                 CacheDuration.Minutes,
-                _options.CurrentValue.PlantCacheMinutes) ?? new UserPlantPermissionData();
+                _options.CurrentValue.PlantCacheMinutes,
+                cancellationToken);
 
-        private async Task<IList<AccessableProject>> GetAllProjectsForUserAsync(string plantId, Guid userOid)
-            => await _cacheManager.GetOrCreate(
+        private async Task<IList<AccessableProject>> GetAllProjectsForUserAsync(string plantId, Guid userOid, CancellationToken cancellationToken)
+            => await _cacheManager.GetOrCreateAsync(
                 ProjectsCacheKey(plantId, userOid),
-                async () => await GetAllOpenProjectsAsync(plantId),
+                token => GetAllOpenProjectsAsync(plantId, token),
                 CacheDuration.Minutes,
-                _options.CurrentValue.PermissionCacheMinutes);
+                _options.CurrentValue.PermissionCacheMinutes,
+                cancellationToken);
 
-        private async Task<IList<AccessablePlant>> GetAllPlantsForUserAsync(Guid userOid)
-            => await _cacheManager.GetOrCreate(
+        private async Task<IList<AccessablePlant>> GetAllPlantsForUserAsync(Guid userOid, CancellationToken cancellationToken)
+            => await _cacheManager.GetOrCreateAsync(
                 PlantsCacheKey(userOid),
-                async () =>
-                {
-                    var plants = await _permissionApiService.GetAllPlantsForUserAsync(userOid);
-                    return plants;
-                },
+                token => _permissionApiService.GetAllPlantsForUserAsync(userOid, token),
                 CacheDuration.Minutes,
-                _options.CurrentValue.PlantCacheMinutes);
+                _options.CurrentValue.PlantCacheMinutes,
+                cancellationToken);
 
         private static string UserPlantPermissionDataKey(Guid userOid, string plantId)
             => $"USER_PLANT_PERMISSION_DATA_{userOid.ToString().ToUpper()}_{plantId}";
@@ -181,7 +184,7 @@ namespace Equinor.ProCoSys.Auth.Caches
             return $"CONTENTRESTRICTIONS_{userOid.ToString().ToUpper()}_{plantId}";
         }
 
-        private async Task<IList<AccessableProject>> GetAllOpenProjectsAsync(string plantId)
-            => await _permissionApiService.GetAllOpenProjectsForCurrentUserAsync(plantId);
+        private async Task<IList<AccessableProject>> GetAllOpenProjectsAsync(string plantId, CancellationToken cancellationToken)
+            => await _permissionApiService.GetAllOpenProjectsForCurrentUserAsync(plantId, cancellationToken);
     }
 }
