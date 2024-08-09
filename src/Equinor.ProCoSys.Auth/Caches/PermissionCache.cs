@@ -126,8 +126,30 @@ namespace Equinor.ProCoSys.Auth.Caches
         public async Task<UserPlantPermissionData> GetUserPlantPermissionDataAsync(Guid userOid, string plantId,
             CancellationToken cancellationToken)
             => await _cacheManager.GetOrCreateAsync(
-                UserPlantPermissionDataKey(userOid, plantId),
-                ct => _permissionApiService.GetUserPlantPermissionDataAsync(userOid, plantId, ct),
+                UserPlantPermissionDataKey(userOid, plantId), async ct =>
+                {
+                    var plantsTask = _permissionApiService.GetAllPlantsForUserAsync(userOid, ct);
+                    var permissionsTask = _permissionApiService.GetPermissionsForCurrentUserAsync(plantId, ct);
+                    var projectsTask = _permissionApiService.GetAllOpenProjectsForCurrentUserAsync(plantId, ct);
+                    var restrictionRolesTask = _permissionApiService.GetRestrictionRolesForCurrentUserAsync(plantId, ct);
+
+                    await Task.WhenAll(plantsTask, permissionsTask, projectsTask, restrictionRolesTask);
+
+                    var allPlantsForUser = await plantsTask;
+                    var permissions = await permissionsTask;
+                    var projects = await projectsTask;
+                    var restrictionRoles = await restrictionRolesTask;
+
+                    var userPlantPermissionData = new UserPlantPermissionData(
+                        Oid: userOid,
+                        Plant: plantId,
+                        AllPlantsForUser: allPlantsForUser.Where(x => x.HasAccess).ToArray(),
+                        Permissions: permissions.ToArray(),
+                        Projects: projects.Where(x => x.HasAccess).ToArray(),
+                        RestrictionRoles: restrictionRoles.ToArray()
+                    );
+                    return userPlantPermissionData;
+                },
                 CacheDuration.Minutes,
                 _options.CurrentValue.PlantCacheMinutes,
                 cancellationToken);
