@@ -69,7 +69,6 @@ namespace Equinor.ProCoSys.Auth.Authorization
             var userOid = principal.Claims.TryGetOid();
             if (!userOid.HasValue)
             {
-                sw.Stop();
                 _logger.LogInformation("----- {Name} early exit, not authenticated yet, Elapsed ({Elapsed}ms)", GetType().Name, sw.ElapsedMilliseconds);
                 return principal;
             }
