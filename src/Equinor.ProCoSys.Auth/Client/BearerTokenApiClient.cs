@@ -49,8 +49,7 @@ namespace Equinor.ProCoSys.Auth.Client
 
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogError($"Posting to '{url}' was unsuccessful and took {stopWatch.Elapsed.TotalMilliseconds}ms. Status: {response.StatusCode}");
-                throw new Exception();
+                throw new Exception($"Posting to '{url}' was unsuccessful and took {stopWatch.Elapsed.TotalMilliseconds}ms. Status: {response.StatusCode}");
             }
         }
 
