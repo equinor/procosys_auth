@@ -27,7 +27,6 @@ namespace Equinor.ProCoSys.Auth.Client
         public async Task PutAsync(string url, HttpContent content, CancellationToken cancellationToken)
         {
             var httpClient = CreateHttpClient();
-
             var stopWatch = Stopwatch.StartNew();
             var response = await httpClient.PutAsync(url, content, cancellationToken);
             stopWatch.Stop();
@@ -42,7 +41,6 @@ namespace Equinor.ProCoSys.Auth.Client
         public async Task PostAsync(string url, HttpContent content, CancellationToken cancellationToken)
         {
             var httpClient = CreateHttpClient();
-
             var stopWatch = Stopwatch.StartNew();
             var response = await httpClient.PostAsync(url, content, cancellationToken);
             stopWatch.Stop();
