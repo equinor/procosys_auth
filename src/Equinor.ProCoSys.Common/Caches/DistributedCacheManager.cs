@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Threading;
@@ -36,18 +37,45 @@ public sealed class DistributedCacheManager(
         }
 
         item = await fetch(cancellationToken);
+        await AddToCache(item, key, duration, expiration, cancellationToken);
+
+        sw.Stop();
+        logger.LogInformation("Added {Key} to cache ({Elapsed}ms)", key, sw.ElapsedMilliseconds);
+        return item;
+    }
+
+    private async Task AddToCache<T>(T item, string key, CacheDuration duration, long expiration,
+        CancellationToken cancellationToken)
+    {
         var serialized = JsonSerializer.Serialize(item);
         await distributedCache.SetStringAsync(key, serialized,
             new DistributedCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = GetEntryCacheDuration(duration, expiration)
             }, cancellationToken);
-
-        sw.Stop();
-        logger.LogInformation("Added {Key} to cache ({Elapsed}ms)", key, sw.ElapsedMilliseconds);
-        return item;
     }
-    
+
+    public async Task<List<T>> GetManyAsync<T>(List<string> keys, CancellationToken cancellationToken)
+    {
+        var result = new List<T>();
+        foreach (var key in keys)
+        {
+            var item = await GetObjectFromCacheAsync<T>(key, cancellationToken);
+            if (item != null && !item.Equals(default(T)))
+            {
+                result.Add(item);
+            }
+        }
+
+        return result;
+    }
+
+    public async Task CreateAsync<T>(string key, T item, CacheDuration duration, long expiration, CancellationToken cancellationToken)
+    {
+        await AddToCache(item, key, duration, expiration, cancellationToken);
+
+        logger.LogInformation("Added {Key} to cache", key);
+    }
 
     private async Task<T> GetObjectFromCacheAsync<T>(string key, CancellationToken cancellationToken)
     {
