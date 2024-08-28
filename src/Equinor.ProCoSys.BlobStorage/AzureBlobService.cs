@@ -71,6 +71,23 @@ namespace Equinor.ProCoSys.BlobStorage
             await client.UploadAsync(content, options, cancellationToken);
         }
 
+        public async Task<bool> CopyBlobAsync(string container, string srcBlobPath, string destBlobPath, bool waitForCompletion = false, CancellationToken cancellationToken = default)
+        {
+            // Get source blob client
+            BlobClient srcBlobClient = new BlobClient(ConnectionString, container, srcBlobPath);
+
+            // Get destination blob client
+            BlobClient destBlobClient = new BlobClient(ConnectionString, container, destBlobPath);
+
+            var operation = await destBlobClient.StartCopyFromUriAsync(srcBlobClient.Uri, null, cancellationToken);
+            if (waitForCompletion)
+            {
+                await operation.WaitForCompletionAsync(cancellationToken);
+            }
+
+            return operation.HasCompleted;
+        }
+
         public async Task<bool> DeleteAsync(string container, string blobPath, CancellationToken cancellationToken = default)
         {
             var client = new BlobClient(ConnectionString, container, blobPath);
