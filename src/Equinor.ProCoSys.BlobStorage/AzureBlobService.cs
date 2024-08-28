@@ -71,6 +71,15 @@ namespace Equinor.ProCoSys.BlobStorage
             await client.UploadAsync(content, options, cancellationToken);
         }
 
+        /// <summary>
+        /// Copy a blob from a source path to a new location, destination path.
+        /// </summary>
+        /// <param name="container">Blob storage container</param>
+        /// <param name="srcBlobPath">Path of blob to be copied to a new location</param>
+        /// <param name="destBlobPath">Destination path for new blob copy</param>
+        /// <param name="waitForCompletion">Wait for the operation to complete before returning</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns>Indication whether the operation has completed</returns>
         public async Task<bool> CopyBlobAsync(string container, string srcBlobPath, string destBlobPath, bool waitForCompletion = false, CancellationToken cancellationToken = default)
         {
             // Get source blob client
