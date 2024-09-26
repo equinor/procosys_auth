@@ -35,14 +35,14 @@ public class MainApiForUserBearerTokenHandler(
 
     private async Task<string> GetTokenForUser(string scope, CancellationToken cancellationToken)
     {
-        if (!_tokenCache.ContainsKey(scope))
-        {
-            var token = await tokenAcquisition.GetAccessTokenForUserAsync(
+        // if (!_tokenCache.ContainsKey(scope))
+        // {
+            return await tokenAcquisition.GetAccessTokenForUserAsync(
                 new[] { scope },
                 tokenAcquisitionOptions: new TokenAcquisitionOptions { CancellationToken = cancellationToken });
-            _tokenCache.TryAdd(scope, token);
-        }
-
-        return _tokenCache[scope];
+        //     _tokenCache.TryAdd(scope, token);
+        // }
+        //
+        // return _tokenCache[scope];
     }
 }
