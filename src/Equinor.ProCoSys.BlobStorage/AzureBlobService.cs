@@ -48,7 +48,7 @@ namespace Equinor.ProCoSys.BlobStorage
             Endpoint = options.CurrentValue.BlobStorageAccountUrl;
             AccountName = options.CurrentValue.BlobStorageAccountName;
             AccountKey = options.CurrentValue.BlobStorageAccountKey;
-            HostEndpoint = Regex.Match(AccountName, @"https//(.+?)(;|\z)", RegexOptions.Singleline).Groups[1].Value;
+            HostEndpoint = Regex.Match(Endpoint, @"https://(.+?)(;|\z)", RegexOptions.Singleline).Groups[1].Value;
             Credential = new DefaultAzureCredential();
         }
 
