@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure;
+using Azure.Core;
+using Azure.Identity;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -20,34 +22,52 @@ namespace Equinor.ProCoSys.BlobStorage
             public const string BLOB = "b";
             public const string CONTAINER = "c";
         }
-        public string ConnectionString { get; private set; }
         public string Endpoint { get; private set; }
         public string AccountName { get; private set; }
         public string AccountKey { get; private set; }
+        public string HostEndpoint { get; private set; }
+        public TokenCredential Credential { get; private set; }
 
         public AzureBlobService(IOptionsMonitor<BlobStorageOptions> options)
         {
-            if (string.IsNullOrEmpty(options.CurrentValue.ConnectionString))
+            if (string.IsNullOrEmpty(options.CurrentValue.BlobStorageAccountUrl))
             {
-                throw new ArgumentNullException(nameof(options.CurrentValue.ConnectionString));
+                throw new ArgumentNullException(nameof(options.CurrentValue.BlobStorageAccountUrl));
             }
 
-            ConnectionString = options.CurrentValue.ConnectionString;
-            AccountName = Regex.Match(ConnectionString, @"AccountName=(.+?)(;|\z)", RegexOptions.Singleline).Groups[1].Value;
-            AccountKey = Regex.Match(ConnectionString, @"AccountKey=(.+?)(;|\z)", RegexOptions.Singleline).Groups[1].Value;
-            Endpoint = "blob." + Regex.Match(ConnectionString, @"EndpointSuffix=(.+?)(;|\z)", RegexOptions.Singleline).Groups[1].Value;
+            if (string.IsNullOrEmpty(options.CurrentValue.BlobStorageAccountName))
+            {
+                throw new ArgumentNullException(nameof(options.CurrentValue.BlobStorageAccountName));
+            }
+
+            if (string.IsNullOrEmpty(options.CurrentValue.BlobStorageAccountKey))
+            {
+                throw new ArgumentNullException(nameof(options.CurrentValue.BlobStorageAccountKey));
+            }
+
+            Endpoint = options.CurrentValue.BlobStorageAccountUrl;
+            AccountName = options.CurrentValue.BlobStorageAccountName;
+            AccountKey = options.CurrentValue.BlobStorageAccountKey;
+            HostEndpoint = Regex.Match(AccountName, @"https//(.+?)(;|\z)", RegexOptions.Singleline).Groups[1].Value;
+            Credential = new DefaultAzureCredential();
+        }
+
+        private BlobClient GetBlobClient(string container, string blobPath)
+        {
+            var blobUri = new Uri($"{Endpoint}/{container}/{blobPath}");
+            return new BlobClient(blobUri, Credential);
         }
 
         public async Task<bool> DownloadAsync(string container, string blobPath, Stream destination, CancellationToken cancellationToken = default)
         {
-            var client = new BlobClient(ConnectionString, container, blobPath);
+            var client = GetBlobClient(container, blobPath);
             var res = await client.DownloadToAsync(destination, cancellationToken);
             return res.Status > 199 && res.Status < 300;
         }
 
         public async Task UploadAsync(string container, string blobPath, Stream content, string contentType, bool overWrite = false, CancellationToken cancellationToken = default)
         {
-            var client = new BlobClient(ConnectionString, container, blobPath);
+            var client = GetBlobClient(container, blobPath);
             var filename = Path.GetFileName(blobPath);
 
             BlobUploadOptions options = new()
@@ -83,10 +103,10 @@ namespace Equinor.ProCoSys.BlobStorage
         public async Task<bool> CopyBlobAsync(string container, string srcBlobPath, string destBlobPath, bool waitForCompletion = false, CancellationToken cancellationToken = default)
         {
             // Get source blob client
-            BlobClient srcBlobClient = new BlobClient(ConnectionString, container, srcBlobPath);
+            BlobClient srcBlobClient = GetBlobClient(container, srcBlobPath);
 
             // Get destination blob client
-            BlobClient destBlobClient = new BlobClient(ConnectionString, container, destBlobPath);
+            BlobClient destBlobClient = GetBlobClient(container, destBlobPath);
 
             var operation = await destBlobClient.StartCopyFromUriAsync(srcBlobClient.Uri, null, cancellationToken);
             if (waitForCompletion)
@@ -99,14 +119,14 @@ namespace Equinor.ProCoSys.BlobStorage
 
         public async Task<bool> DeleteAsync(string container, string blobPath, CancellationToken cancellationToken = default)
         {
-            var client = new BlobClient(ConnectionString, container, blobPath);
+            var client = GetBlobClient(container, blobPath);
             var res = await client.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, null, cancellationToken);
             return res.Value;
         }
 
         public async Task<List<string>> ListAsync(string container, CancellationToken cancellationToken = default)
         {
-            var client = new BlobContainerClient(ConnectionString, container);
+            var client = new BlobContainerClient(new Uri($"{Endpoint}/{container}"), Credential);
             var blobNames = new List<string>();
             await foreach (var blob in client.GetBlobsAsync(BlobTraits.None, BlobStates.None, null, cancellationToken))
             {
@@ -121,7 +141,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = string.Format($"{AccountName}.{Endpoint}"),
+                Host = HostEndpoint,
                 Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
@@ -134,7 +154,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = string.Format($"{AccountName}.{Endpoint}"),
+                Host = HostEndpoint,
                 Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
@@ -147,7 +167,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = string.Format($"{AccountName}.{Endpoint}"),
+                Host = HostEndpoint,
                 Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
@@ -160,7 +180,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = string.Format($"{AccountName}.{Endpoint}"),
+                Host = HostEndpoint,
                 Path = container,
                 Query = $"restype=container&comp=list&{sasToken}"
             };
