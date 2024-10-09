@@ -2,7 +2,7 @@
 {
     public class BlobStorageOptions
     {
-        public string ConnectionString { get; set; }
+        public string AccountName { get; set; }
         public int MaxSizeMb { get; set; }
         public string BlobContainer { get; set; }
         public int BlobClockSkewMinutes { get; set; }
