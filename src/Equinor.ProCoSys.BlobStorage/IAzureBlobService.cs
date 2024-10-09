@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Azure.Storage.Blobs.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -15,9 +16,9 @@ namespace Equinor.ProCoSys.BlobStorage
         Task<bool> DeleteAsync(string container, string blobPath, CancellationToken cancellationToken = default);
         Task<List<string>> ListAsync(string container, CancellationToken cancellationToken = default);
 
-        Uri GetDownloadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn, string startIPAddress = null, string endIPAddress = null);
-        Uri GetUploadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn);
-        Uri GetDeleteSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn);
-        Uri GetListSasUri(string container, DateTimeOffset startsOn, DateTimeOffset expiresOn);
+        Uri GetDownloadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn, UserDelegationKey userDelegationKey, string startIPAddress = null, string endIPAddress = null);
+        Uri GetUploadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn, UserDelegationKey userDelegationKey);
+        Uri GetDeleteSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn, UserDelegationKey userDelegationKey);
+        Uri GetListSasUri(string container, DateTimeOffset startsOn, DateTimeOffset expiresOn, UserDelegationKey userDelegationKey);
     }
 }

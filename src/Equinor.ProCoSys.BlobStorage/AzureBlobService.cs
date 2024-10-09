@@ -6,8 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Core;
-using Azure.Identity;
-using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
@@ -22,13 +20,13 @@ namespace Equinor.ProCoSys.BlobStorage
             public const string BLOB = "b";
             public const string CONTAINER = "c";
         }
+
         public string Endpoint { get; private set; }
         public string AccountName { get; private set; }
-        public string AccountKey { get; private set; }
         public string HostEndpoint { get; private set; }
         public TokenCredential Credential { get; private set; }
 
-        public AzureBlobService(IOptionsMonitor<BlobStorageOptions> options)
+        public AzureBlobService(IOptionsMonitor<BlobStorageOptions> options, TokenCredential credential)
         {
             if (string.IsNullOrEmpty(options.CurrentValue.BlobStorageAccountUrl))
             {
@@ -40,16 +38,10 @@ namespace Equinor.ProCoSys.BlobStorage
                 throw new ArgumentNullException(nameof(options.CurrentValue.BlobStorageAccountName));
             }
 
-            if (string.IsNullOrEmpty(options.CurrentValue.BlobStorageAccountKey))
-            {
-                throw new ArgumentNullException(nameof(options.CurrentValue.BlobStorageAccountKey));
-            }
-
             Endpoint = options.CurrentValue.BlobStorageAccountUrl;
             AccountName = options.CurrentValue.BlobStorageAccountName;
-            AccountKey = options.CurrentValue.BlobStorageAccountKey;
             HostEndpoint = Regex.Match(Endpoint, @"https://(.+?)(;|\z)", RegexOptions.Singleline).Groups[1].Value;
-            Credential = new DefaultAzureCredential();
+            Credential = credential;
         }
 
         private BlobClient GetBlobClient(string container, string blobPath)
@@ -135,9 +127,9 @@ namespace Equinor.ProCoSys.BlobStorage
             return blobNames;
         }
 
-        public Uri GetDownloadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn,string startIpAddress = null, string endIpAddress = null)
+        public Uri GetDownloadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn, UserDelegationKey userDelegationKey, string startIpAddress = null, string endIpAddress = null)
         {
-            var sasToken = GetSasToken(container, blobPath, ResourceTypes.BLOB, BlobAccountSasPermissions.Read, startsOn, expiresOn, startIpAddress, endIpAddress);
+            var sasToken = GetSasToken(container, blobPath, ResourceTypes.BLOB, BlobAccountSasPermissions.Read, startsOn, expiresOn, userDelegationKey, startIpAddress, endIpAddress);
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
@@ -148,9 +140,9 @@ namespace Equinor.ProCoSys.BlobStorage
             return fullUri.Uri;
         }
 
-        public Uri GetUploadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn)
+        public Uri GetUploadSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn, UserDelegationKey userDelegationKey)
         {
-            var sasToken = GetSasToken(container, blobPath, ResourceTypes.BLOB, BlobAccountSasPermissions.Create | BlobAccountSasPermissions.Write, startsOn, expiresOn);
+            var sasToken = GetSasToken(container, blobPath, ResourceTypes.BLOB, BlobAccountSasPermissions.Create | BlobAccountSasPermissions.Write, startsOn, expiresOn, userDelegationKey);
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
@@ -161,9 +153,9 @@ namespace Equinor.ProCoSys.BlobStorage
             return fullUri.Uri;
         }
 
-        public Uri GetDeleteSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn)
+        public Uri GetDeleteSasUri(string container, string blobPath, DateTimeOffset startsOn, DateTimeOffset expiresOn, UserDelegationKey userDelegationKey)
         {
-            var sasToken = GetSasToken(container, blobPath, ResourceTypes.BLOB, BlobAccountSasPermissions.Delete, startsOn, expiresOn);
+            var sasToken = GetSasToken(container, blobPath, ResourceTypes.BLOB, BlobAccountSasPermissions.Delete, startsOn, expiresOn, userDelegationKey);
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
@@ -174,9 +166,9 @@ namespace Equinor.ProCoSys.BlobStorage
             return fullUri.Uri;
         }
 
-        public Uri GetListSasUri(string container, DateTimeOffset startsOn, DateTimeOffset expiresOn)
+        public Uri GetListSasUri(string container, DateTimeOffset startsOn, DateTimeOffset expiresOn, UserDelegationKey userDelegationKey)
         {
-            var sasToken = GetSasToken(container, string.Empty, ResourceTypes.CONTAINER, BlobAccountSasPermissions.List, startsOn, expiresOn);
+            var sasToken = GetSasToken(container, string.Empty, ResourceTypes.CONTAINER, BlobAccountSasPermissions.List, startsOn, expiresOn, userDelegationKey);
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
@@ -188,13 +180,14 @@ namespace Equinor.ProCoSys.BlobStorage
         }
 
         private string GetSasToken(
-            string containerName, 
-            string blobName, 
-            string resourceType, 
-            BlobAccountSasPermissions permissions, 
-            DateTimeOffset startsOn, 
-            DateTimeOffset expiresOn, 
-            string startIpAddress = null, 
+            string containerName,
+            string blobName,
+            string resourceType,
+            BlobAccountSasPermissions permissions,
+            DateTimeOffset startsOn,
+            DateTimeOffset expiresOn,
+            UserDelegationKey userDelegationKey,
+            string startIpAddress = null,
             string endIpAddress = null)
         {
             var sasBuilder = new BlobSasBuilder
@@ -205,6 +198,7 @@ namespace Equinor.ProCoSys.BlobStorage
                 StartsOn = startsOn,
                 ExpiresOn = expiresOn
             };
+
             // Set the IP range for the SAS token
             if (!string.IsNullOrEmpty(startIpAddress))
             {
@@ -215,7 +209,8 @@ namespace Equinor.ProCoSys.BlobStorage
                 sasBuilder.IPRange = new SasIPRange(System.Net.IPAddress.Parse(startIpAddress), System.Net.IPAddress.Parse(endIpAddress));
             }
             sasBuilder.SetPermissions(permissions);
-            return sasBuilder.ToSasQueryParameters(new StorageSharedKeyCredential(AccountName, AccountKey)).ToString();
+
+            return sasBuilder.ToSasQueryParameters(userDelegationKey, AccountName).ToString();
         }
     }
 }
