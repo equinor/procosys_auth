@@ -19,7 +19,7 @@ namespace Equinor.ProCoSys.BlobStorage.Tests
             var accountUrl = $"https://{accountName}.blob.core.windows.net";
             var options = new BlobStorageOptions
             {
-                BlobStorageAccountName = accountName,
+                AccountName = accountName,
             };
             optionsMock.CurrentValue.Returns(options);
             
@@ -27,7 +27,7 @@ namespace Equinor.ProCoSys.BlobStorage.Tests
             var dut = new AzureBlobService(optionsMock, tokenMock);
 
             // Assert
-            Assert.AreEqual(options.BlobStorageAccountName, dut.AccountName);
+            Assert.AreEqual(options.AccountName, dut.AccountName);
             Assert.AreEqual(accountDomain, dut.AccountDomain);
             Assert.AreEqual(accountUrl, dut.AccountUrl);
         }

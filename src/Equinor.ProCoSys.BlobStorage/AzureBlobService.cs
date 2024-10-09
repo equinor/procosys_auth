@@ -30,15 +30,15 @@ namespace Equinor.ProCoSys.BlobStorage
         public AzureBlobService(IOptionsMonitor<BlobStorageOptions> options, TokenCredential credential)
         {
 
-            if (string.IsNullOrEmpty(options.CurrentValue.BlobStorageAccountName))
+            if (string.IsNullOrEmpty(options.CurrentValue.AccountName))
             {
-                throw new ArgumentNullException(nameof(options.CurrentValue.BlobStorageAccountName));
+                throw new ArgumentNullException(nameof(options.CurrentValue.AccountName));
             }
 
-            AccountName = options.CurrentValue.BlobStorageAccountName;
+            AccountName = options.CurrentValue.AccountName;
             Credential = credential;
 
-            AccountDomain = options.CurrentValue.BlobStorageAccountName + _blobStorageUrlSuffix;
+            AccountDomain = options.CurrentValue.AccountName + _blobStorageUrlSuffix;
             AccountUrl = "https://" + AccountDomain;
         }
 
