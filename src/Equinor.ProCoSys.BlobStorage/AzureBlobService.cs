@@ -21,9 +21,9 @@ namespace Equinor.ProCoSys.BlobStorage
             public const string CONTAINER = "c";
         }
 
-        public string Endpoint { get; private set; }
+        public string AccountUrl { get; private set; }
         public string AccountName { get; private set; }
-        public string HostEndpoint { get; private set; }
+        public string HostUrl { get; private set; }
         public TokenCredential Credential { get; private set; }
 
         public AzureBlobService(IOptionsMonitor<BlobStorageOptions> options, TokenCredential credential)
@@ -38,15 +38,18 @@ namespace Equinor.ProCoSys.BlobStorage
                 throw new ArgumentNullException(nameof(options.CurrentValue.BlobStorageAccountName));
             }
 
-            Endpoint = options.CurrentValue.BlobStorageAccountUrl;
             AccountName = options.CurrentValue.BlobStorageAccountName;
-            HostEndpoint = Regex.Match(Endpoint, @"https://(.+?)(;|\z)", RegexOptions.Singleline).Groups[1].Value;
             Credential = credential;
+
+            // Example: https://mystorage.blob.core.windows.net
+            AccountUrl = "https://" + options.CurrentValue.BlobStorageAccountUrl;
+            // Example: mystorage.blob.core.windows.net
+            HostUrl = options.CurrentValue.BlobStorageAccountUrl;
         }
 
         private BlobClient GetBlobClient(string container, string blobPath)
         {
-            var blobUri = new Uri($"{Endpoint}/{container}/{blobPath}");
+            var blobUri = new Uri($"{AccountUrl}/{container}/{blobPath}");
             return new BlobClient(blobUri, Credential);
         }
 
@@ -118,7 +121,7 @@ namespace Equinor.ProCoSys.BlobStorage
 
         public async Task<List<string>> ListAsync(string container, CancellationToken cancellationToken = default)
         {
-            var client = new BlobContainerClient(new Uri($"{Endpoint}/{container}"), Credential);
+            var client = new BlobContainerClient(new Uri($"{AccountUrl}/{container}"), Credential);
             var blobNames = new List<string>();
             await foreach (var blob in client.GetBlobsAsync(BlobTraits.None, BlobStates.None, null, cancellationToken))
             {
@@ -133,7 +136,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = HostEndpoint,
+                Host = HostUrl,
                 Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
@@ -146,7 +149,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = HostEndpoint,
+                Host = HostUrl,
                 Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
@@ -159,7 +162,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = HostEndpoint,
+                Host = HostUrl,
                 Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
@@ -172,7 +175,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = HostEndpoint,
+                Host = HostUrl,
                 Path = container,
                 Query = $"restype=container&comp=list&{sasToken}"
             };
