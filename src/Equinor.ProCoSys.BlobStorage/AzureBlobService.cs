@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure;
@@ -21,17 +20,15 @@ namespace Equinor.ProCoSys.BlobStorage
             public const string CONTAINER = "c";
         }
 
-        public string AccountUrl { get; private set; }
+        private readonly string _blobStorageUrlSuffix = ".blob.core.windows.net";
+
+        public string AccountDomain { get; private set; }
         public string AccountName { get; private set; }
-        public string HostUrl { get; private set; }
+        public string AccountUrl { get; private set; }
         public TokenCredential Credential { get; private set; }
 
         public AzureBlobService(IOptionsMonitor<BlobStorageOptions> options, TokenCredential credential)
         {
-            if (string.IsNullOrEmpty(options.CurrentValue.BlobStorageAccountUrl))
-            {
-                throw new ArgumentNullException(nameof(options.CurrentValue.BlobStorageAccountUrl));
-            }
 
             if (string.IsNullOrEmpty(options.CurrentValue.BlobStorageAccountName))
             {
@@ -41,10 +38,8 @@ namespace Equinor.ProCoSys.BlobStorage
             AccountName = options.CurrentValue.BlobStorageAccountName;
             Credential = credential;
 
-            // Example: https://mystorage.blob.core.windows.net
-            AccountUrl = "https://" + options.CurrentValue.BlobStorageAccountUrl;
-            // Example: mystorage.blob.core.windows.net
-            HostUrl = options.CurrentValue.BlobStorageAccountUrl;
+            AccountDomain = options.CurrentValue.BlobStorageAccountName + _blobStorageUrlSuffix;
+            AccountUrl = "https://" + AccountDomain;
         }
 
         private BlobClient GetBlobClient(string container, string blobPath)
@@ -136,7 +131,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = HostUrl,
+                Host = AccountDomain,
                 Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
@@ -149,7 +144,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = HostUrl,
+                Host = AccountDomain,
                 Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
@@ -162,7 +157,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = HostUrl,
+                Host = AccountDomain,
                 Path = Path.Combine(container, blobPath),
                 Query = sasToken
             };
@@ -175,7 +170,7 @@ namespace Equinor.ProCoSys.BlobStorage
             var fullUri = new UriBuilder
             {
                 Scheme = "https",
-                Host = HostUrl,
+                Host = AccountDomain,
                 Path = container,
                 Query = $"restype=container&comp=list&{sasToken}"
             };
