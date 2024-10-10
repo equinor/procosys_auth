@@ -2,7 +2,7 @@
 {
     public class BlobStorageOptions
     {
-        public readonly string BlobStorageUrlSuffix = ".blob.core.windows.net";
+        private readonly string BlobStorageUrlSuffix = ".blob.core.windows.net";
         public string AccountName { get; set; }
         public string AccountDomain => AccountName + BlobStorageUrlSuffix;
         public string AccountUrl => "https://" + AccountDomain;
