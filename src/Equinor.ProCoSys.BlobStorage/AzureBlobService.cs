@@ -20,8 +20,6 @@ namespace Equinor.ProCoSys.BlobStorage
             public const string CONTAINER = "c";
         }
 
-        private readonly string _blobStorageUrlSuffix = ".blob.core.windows.net";
-
         public string AccountDomain { get; private set; }
         public string AccountName { get; private set; }
         public string AccountUrl { get; private set; }
@@ -36,10 +34,9 @@ namespace Equinor.ProCoSys.BlobStorage
             }
 
             AccountName = options.CurrentValue.AccountName;
+            AccountDomain = options.CurrentValue.AccountDomain;
+            AccountUrl = options.CurrentValue.AccountUrl;
             Credential = credential;
-
-            AccountDomain = options.CurrentValue.AccountName + _blobStorageUrlSuffix;
-            AccountUrl = "https://" + AccountDomain;
         }
 
         private BlobClient GetBlobClient(string container, string blobPath)
