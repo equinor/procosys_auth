@@ -57,12 +57,15 @@ namespace Equinor.ProCoSys.BlobStorage
             var client = GetBlobClient(container, blobPath);
             var filename = Path.GetFileName(blobPath);
 
+            // Encode the filename using URL encoding (for non-ASCII characters).
+            var encodedFilename = Uri.EscapeDataString(filename);
+
             BlobUploadOptions options = new()
             {
                 HttpHeaders = new BlobHttpHeaders
                 {
                     ContentType = contentType,
-                    ContentDisposition = contentType.StartsWith("image/") ? $"attachment; filename={filename}" : null
+                    ContentDisposition = contentType.StartsWith("image/") ? $"attachment; filename*=UTF-8''{encodedFilename}" : null
                 }
             };
 
